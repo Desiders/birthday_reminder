@@ -1,19 +1,23 @@
+from logging import getLogger
+
 from aiogram import Router
 from aiogram.filters import CommandStart
 from aiogram.types import Message
 from aiogram_dialog import DialogManager, StartMode
 
-from .states import CreateRemind
+from ..dialogs.create_reming import CreateRemind
 
 __all__ = ["router"]
+
+logger = getLogger(__name__)
 
 router = Router(name="start_router")
 
 
 @router.message(CommandStart())
-async def start_dialog(
-    message: Message, dialog_manager: DialogManager
-) -> None:
+async def start(message: Message, dialog_manager: DialogManager) -> None:
+    logger.debug("Start command")
+
     first_name: str
     if message.from_user:
         first_name = message.from_user.first_name

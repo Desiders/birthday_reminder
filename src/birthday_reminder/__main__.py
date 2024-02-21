@@ -5,7 +5,8 @@ from aiogram import Bot, Dispatcher, Router
 from aiogram_dialog import setup_dialogs
 
 from .config import configure_logging, load_config_from_env
-from .dialogs import create_reming_dialog, main_menu_dialog, start_router
+from .dialogs import create_reming_dialog, main_menu_dialog
+from .handlers import start_router
 
 logger = getLogger(__name__)
 
@@ -20,12 +21,12 @@ async def main():
 
     main_router = Router(name="main_router")
 
-    dispatcher = Dispatcher()
-
-    dispatcher.include_router(main_router)
-    main_router.include_router(start_router)
     main_router.include_router(create_reming_dialog)
     main_router.include_router(main_menu_dialog)
+    main_router.include_router(start_router)
+
+    dispatcher = Dispatcher()
+    dispatcher.include_router(main_router)
 
     setup_dialogs(dispatcher)
 
