@@ -27,6 +27,9 @@ test = [
 lint = [
     "ruff",
 ]
+dev = [
+    "pre-commit",
+]
 
 [build-system]
 requires = ["setuptools"]
