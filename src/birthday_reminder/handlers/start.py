@@ -5,7 +5,7 @@ from aiogram.filters import CommandStart
 from aiogram.types import Message
 from aiogram_dialog import DialogManager, StartMode
 
-from ..dialogs.create_reming import CreateRemind
+from birthday_reminder.dialogs.create_reming import CreateRemind
 
 __all__ = ["router"]
 

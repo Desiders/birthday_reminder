@@ -11,7 +11,7 @@ init-venv:
 # Run bot in `.venv` virtual environment
 run:
     source .venv/bin/activate && \
-    python -m src.birthday_reminder
+    python -m birthday_reminder
 
 # Run ruff linter check with `pyproject.toml` configuration and fix issues
 ruff-lint:
