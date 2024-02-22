@@ -22,3 +22,10 @@ ruff-lint:
 ruff-format:
     source .venv/bin/activate && \
     ruff format --config=pyproject.toml .
+
+# Run ruff linter check with `pyproject.toml` configuration and fix issues
+# and run ruff formatter
+ruff:
+    source .venv/bin/activate && \
+    ruff check --config=pyproject.toml --fix . || \
+    ruff format --config=pyproject.toml .
