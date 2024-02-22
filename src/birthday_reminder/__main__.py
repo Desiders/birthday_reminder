@@ -8,7 +8,7 @@ from .adapters.database import get_engine, get_session_factory
 from .config import configure_logging, load_config_from_env
 from .presentation.dialogs import create_reming_dialog, main_menu_dialog
 from .presentation.handlers import start_router
-from .presentation.middlewares import DatabaseMiddleware
+from .presentation.middlewares import DatabaseMiddleware, UserMiddleware
 
 logger = getLogger(__name__)
 
@@ -32,6 +32,7 @@ async def main():
 
     for observer in main_router.observers.values():
         observer.outer_middleware.register(DatabaseMiddleware(pool))
+        observer.outer_middleware.register(UserMiddleware())
 
     dispatcher = Dispatcher()
     dispatcher.include_router(main_router)
