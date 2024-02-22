@@ -44,7 +44,7 @@ class Database:
     pool_size: int = 10
 
     def get_postgres_uri(self) -> str:
-        return f"postgresql://{self.user}:{self.password}@{self.host}:{self.port}/{self.database}"
+        return f"postgresql+asyncpg://{self.user}:{self.password}@{self.host}:{self.port}/{self.database}"
 
 
 @dataclass
