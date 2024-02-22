@@ -40,6 +40,9 @@ class Database:
     password: str
     database: str
 
+    echo: bool = True
+    pool_size: int = 10
+
     def get_postgres_uri(self) -> str:
         return f"postgresql://{self.user}:{self.password}@{self.host}:{self.port}/{self.database}"
 
