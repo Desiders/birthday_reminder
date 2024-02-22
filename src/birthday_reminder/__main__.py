@@ -4,9 +4,12 @@ from logging import getLogger
 from aiogram import Bot, Dispatcher, Router
 from aiogram_dialog import setup_dialogs
 
+# from .adapters.database import get_engine, get_session_factory
 from .config import configure_logging, load_config_from_env
-from .dialogs import create_reming_dialog, main_menu_dialog
-from .handlers import start_router
+from .presentation.dialogs import create_reming_dialog, main_menu_dialog
+from .presentation.handlers import start_router
+
+# from .presentation.middlewares import DatabaseMiddleware
 
 logger = getLogger(__name__)
 
@@ -24,6 +27,12 @@ async def main():
     main_router.include_router(create_reming_dialog)
     main_router.include_router(main_menu_dialog)
     main_router.include_router(start_router)
+
+    # engine = get_engine(config.database)
+    # pool = get_session_factory(engine)
+
+    # for observer in main_router.observers.values():
+    #     observer.outer_middleware.register(DatabaseMiddleware(pool))
 
     dispatcher = Dispatcher()
     dispatcher.include_router(main_router)
