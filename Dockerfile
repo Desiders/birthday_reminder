@@ -15,7 +15,7 @@ RUN apt-get update \
 RUN python3 -m venv /opt/venv
 WORKDIR /build
 COPY ./pyproject.toml /build
-COPY ./src /build/src
+RUN mkdir /build/src
 RUN pip install --no-cache-dir --upgrade pip \
  && pip install --no-cache-dir setuptools wheel \
  && pip install --no-cache-dir /build
