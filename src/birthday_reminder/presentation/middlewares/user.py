@@ -40,9 +40,23 @@ class UserMiddleware(BaseMiddleware):
             db_user = await query(user.id)
         except TgIDNotFound as err:
             logger.warn(
-                "User not found", extra={"tg_id": user.id, "error": err}
+                "User not found",
+                extra={"tg_id": user.id, "error": err},
             )
 
-            return await handler(event, data)
+            return await handler(
+                event,
+                {
+                    **data,
+                    "user": user,
+                },
+            )
 
-        return await handler(event, {**data, "db_user": db_user})
+        return await handler(
+            event,
+            {
+                **data,
+                "db_user": db_user,
+                "user": user,
+            },
+        )
