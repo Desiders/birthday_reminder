@@ -29,7 +29,7 @@ services:
     expose:
       - "5432"
     ports:
-      - "127.0.0.1:15432:5432"
+      - "127.0.0.1:${POSTGRES_PORT:-5432}:5432"
     networks:
       - birthday_reminder.postgres.network
     environment:
@@ -44,24 +44,23 @@ services:
       timeout: 60s
       retries: 5
       start_period: 10s
-
+  
   postgres_migration:
     profiles: [ "migration" ]
     container_name: birthday_reminder.postgres_migration
     build:
       context: .
     restart: "no"
+    depends_on:
+      postgres:
+        condition: service_healthy
     networks:
       - birthday_reminder.postgres.network
     env_file:
       - .env
-    depends_on:
-      postgres:
-        condition: service_healthy
     volumes:
       - ./alembic.ini:/app/alembic.ini:ro
-      - ./src/birthday_reminder/adapters/database/migrations:/app/src/birthday_reminder/adapters/database/migrations:ro
-    command: ["python", "-m", "alembic", "upgrade", "head"]
+    command: ["python", "-m", "alembic", "-c", "/app/alembic.ini", "upgrade", "head"]
 
 volumes:
   birthday_reminder.postgres.data: {}

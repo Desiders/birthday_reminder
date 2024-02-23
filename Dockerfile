@@ -25,6 +25,12 @@ COPY --from=builder-base /opt/venv /opt/venv
 
 WORKDIR /app
 COPY ./src /app/src
-WORKDIR /app/src
+WORKDIR /app
+
+# This hack need to add possibility to run module without `src.` prefix
+# and stay in the same directory to run migrations with path `./src/birthday_reminder/adapters/database/migrations` 
+# (specified in `alembic.ini` file).
+# If you know how to do it better, please let me know.
+ENV PYTHONPATH "/app/src"
 
 CMD ["python", "-Om", "birthday_reminder"]
