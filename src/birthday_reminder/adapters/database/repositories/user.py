@@ -1,13 +1,14 @@
+from datetime import timedelta
 from uuid import UUID
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 
 from birthday_reminder.adapters.database.converters import (
     model_to_user,
     user_to_model,
 )
 from birthday_reminder.application.user import UserReader, UserRepo
-from birthday_reminder.domain.user.entities import User
+from birthday_reminder.domain.user.entities import User, UsersStats
 from birthday_reminder.domain.user.exceptions import IDNotFound, TgIDNotFound
 
 from ..exception_mapper import exception_mapper
@@ -45,3 +46,22 @@ class UserReaderImpl(Repo, UserReader):
             raise TgIDNotFound(tg_id)
 
         return model_to_user(user)
+
+    @exception_mapper
+    async def get_users_stats(self) -> UsersStats:
+        result = await self._session.execute(
+            select(
+                func.count(UserModel.id),
+                func.count().filter(
+                    UserModel.created_at > func.now() - timedelta(days=1)
+                ),
+                func.count().filter(
+                    UserModel.created_at > func.now() - timedelta(weeks=1)
+                ),
+                func.count().filter(
+                    UserModel.created_at > func.now() - timedelta(days=30)
+                ),
+            )
+        )
+
+        return UsersStats(*result.one())
