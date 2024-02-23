@@ -8,7 +8,7 @@ from aiogram.types import (
     Message,
 )
 from aiogram_dialog import Dialog, DialogManager, StartMode, Window
-from aiogram_dialog.widgets.kbd import Button
+from aiogram_dialog.widgets.kbd import Button, Row, Start
 from aiogram_dialog.widgets.text import Const
 
 from birthday_reminder.application.birthday_remind import BirthdayRemindReader
@@ -20,7 +20,7 @@ from birthday_reminder.application.common import UnitOfWork
 from birthday_reminder.domain.user.entities import User as UserDB
 
 from .common import CREATE_REMIND_BUTTON
-from .states import CreateRemind, MainMenu
+from .states import CreateRemind, DeleteRemind, MainMenu
 
 logger = getLogger(__name__)
 
@@ -161,15 +161,22 @@ main_menu = Dialog(
     Window(
         Const("Select action:"),
         CREATE_REMIND_BUTTON,
+        Row(
+            Button(
+                text=Const("Show reminders"),
+                id="show_reminders",
+                on_click=show_reminders,
+            ),
+            Start(
+                text=Const("Delete reminder"),
+                id="delete_remind",
+                state=DeleteRemind.select_remind,
+            ),
+        ),
         Button(
             text=Const("Show capybara"),
             id="show_capybara",
             on_click=show_capybara,
-        ),
-        Button(
-            text=Const("Show reminders"),
-            id="show_reminders",
-            on_click=show_reminders,
         ),
         state=MainMenu.menu,
     ),

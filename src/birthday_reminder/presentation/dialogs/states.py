@@ -10,3 +10,8 @@ class CreateRemind(StatesGroup):
     select_day = State()
     select_user = State()
     confirm = State()
+
+
+class DeleteRemind(StatesGroup):
+    select_remind = State()
+    confirm = State()

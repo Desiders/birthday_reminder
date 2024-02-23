@@ -1,3 +1,4 @@
-__all__ = ["AddBirthdayRemind"]
+__all__ = ["AddBirthdayRemind", "DeleteBirthdayRemindById"]
 
 from .add import AddBirthdayRemind
+from .delete_by_id import DeleteBirthdayRemindById
