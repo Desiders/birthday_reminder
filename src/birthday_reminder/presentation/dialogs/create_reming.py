@@ -22,6 +22,17 @@ from aiogram_dialog.widgets.kbd import (
     Row,
 )
 from aiogram_dialog.widgets.text import Const, Format
+from uuid6 import uuid7
+
+from birthday_reminder.application.birthday_remind import BirthdayRemindRepo
+from birthday_reminder.application.birthday_remind.commands import (
+    AddBirthdayRemind,
+)
+from birthday_reminder.application.common import UnitOfWork
+from birthday_reminder.domain.birthday_remind.entities import (
+    BirthdayRemind as BirthdayRemindDB,
+)
+from birthday_reminder.domain.user.entities import User as UserDB
 
 from .common import MAIN_MENU_BUTTON
 from .states import CreateRemind, MainMenu
@@ -99,8 +110,8 @@ async def days_getter(
     raise ValueError(f"Invalid month number: {month_number}. Should be 1-12.")
 
 
-def day_number_getter(month: Month) -> int:
-    return month.number
+def day_number_getter(day: Day) -> int:
+    return day.number
 
 
 def day_is_checked(
@@ -156,13 +167,13 @@ async def remind_info_getter(dialog_manager: DialogManager, **_kwargs) -> dict:
     month = next((m for m in MONTHS if m.number == month_number))
 
     radio = dialog_manager.find(DAY_ID)  # type: ignore
-    day_number = int(radio.get_checked())  # type: ignore
+    day = int(radio.get_checked())  # type: ignore
 
     name = dialog_manager.dialog_data["name"]
 
     return dict(
         month=month,
-        day_number=day_number,
+        day=day,
         name=name,
     )
 
@@ -181,14 +192,35 @@ async def create_remind_confirmed(
         button: The button that triggered the handler.
         manager: The dialog manager.
     """
+    data = manager.middleware_data
+    db_user: UserDB = data["db_user"]
+    uow: UnitOfWork = data["uow"]
+    birthday_remind_repo: BirthdayRemindRepo = data["birthday_remind_repo"]
 
     reminder_info = await remind_info_getter(manager)
 
+    month: Month = reminder_info["month"]
+    month_number = month.number
+    day: int = reminder_info["day"]
+    name: str = reminder_info["name"]
+
+    command = AddBirthdayRemind(birthday_remind_repo, uow)
+
     logger.debug(
-        "Create reminder",
+        "Add reminder to the database",
         extra={
             "reminder_info": reminder_info,
         },
+    )
+
+    await command(
+        BirthdayRemindDB(
+            id=uuid7(),
+            user_id=db_user.id,
+            name=name,
+            month=month_number,
+            day=day,
+        )
     )
 
     text = (
@@ -304,7 +336,7 @@ create_remind = Dialog(
     ),
     Window(
         Format(
-            "You are about to create a reminder for {name} on {day_number} {month.name}?"
+            "You are about to create a reminder for {name} on {day} {month.name}?"
         ),
         Row(
             Back(

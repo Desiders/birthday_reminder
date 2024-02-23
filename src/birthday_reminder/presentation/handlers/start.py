@@ -50,9 +50,9 @@ async def start_for_new_user(
         disable_notification=False,
     )
 
-    query = AddUser(user_repo, uow)
+    command = AddUser(user_repo, uow)
 
-    await query(UserDB(id=uuid7(), tg_id=user.id))
+    await command(UserDB(id=uuid7(), tg_id=user.id))
 
     logger.debug("User added to the database")
 
