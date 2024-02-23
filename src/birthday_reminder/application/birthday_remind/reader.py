@@ -11,5 +11,11 @@ class Reader(Protocol):
         raise NotImplementedError
 
     @abstractmethod
-    async def get_by_user_id(self, user_id: int) -> list[BirthdayRemind]:
+    async def get_by_user_id(self, user_id: UUID) -> list[BirthdayRemind]:
+        raise NotImplementedError
+
+    @abstractmethod
+    async def get_by_user_id_and_sort_by_nearest(
+        self, user_id: UUID, now_day: int, now_month: int
+    ) -> list[BirthdayRemind]:
         raise NotImplementedError

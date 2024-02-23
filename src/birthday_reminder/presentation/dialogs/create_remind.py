@@ -101,7 +101,8 @@ async def days_getter(
     if month_number in (1, 3, 5, 7, 8, 10, 12):
         return {DAYS_KEY: [Day(i) for i in range(1, 32)]}
     elif month_number == 2:
-        return {DAYS_KEY: [Day(i) for i in range(1, 29)]}
+        # We allow 29 days for February, because it's also a valid date for leap years.
+        return {DAYS_KEY: [Day(i) for i in range(1, 30)]}
     elif month_number in (4, 6, 9, 11):
         return {DAYS_KEY: [Day(i) for i in range(1, 31)]}
 
@@ -238,8 +239,6 @@ async def create_remind_confirmed(
 
             logger.debug("Send message about successful reminder creation")
 
-            # TODO: save reminder to the database
-
             await callback_query.message.answer(
                 text=text,
                 parse_mode=None,
@@ -250,8 +249,6 @@ async def create_remind_confirmed(
             logger.warn(
                 "Inaccessible message. Try to send a message in private chat."
             )
-
-            # TODO: save reminder to the database
 
             bot: Bot = manager.middleware_data["bot"]  # type: ignore
 
