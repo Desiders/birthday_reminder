@@ -1,5 +1,3 @@
-set dotenv-load
-
 host := `uname -a`
 
 # Show help message
@@ -10,6 +8,10 @@ help:
 run-docker:
 	docker compose --profile bot up --build
 
+# Run database migration in docker container
+migration-docker:
+	docker compose --profile migration up --build
+
 # Down docker
 down-docker:
 	docker compose --profile bot down
@@ -17,6 +19,8 @@ down-docker:
 # Build docker image
 build-docker:
 	docker compose build
+
+set dotenv-load
 
 # Init `.venv` virtual environment
 init-venv:
