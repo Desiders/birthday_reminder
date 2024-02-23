@@ -1,6 +1,7 @@
+from datetime import timedelta
 from uuid import UUID
 
-from sqlalchemy import case, delete, select
+from sqlalchemy import case, delete, func, select
 
 from birthday_reminder.adapters.database.converters import (
     birthday_remind_to_model,
@@ -10,7 +11,10 @@ from birthday_reminder.application.birthday_remind import (
     BirthdayRemindReader,
     BirthdayRemindRepo,
 )
-from birthday_reminder.domain.birthday_remind.entities import BirthdayRemind
+from birthday_reminder.domain.birthday_remind.entities import (
+    BirthdayRemind,
+    BirthdayRemindersStats,
+)
 from birthday_reminder.domain.birthday_remind.exceptions import IDNotFound
 
 from ..exception_mapper import exception_mapper
@@ -102,3 +106,25 @@ class BirthdayRemindReaderImpl(Repo, BirthdayRemindReader):
             model_to_birthday_remind(birthday_remind)
             for birthday_remind in birthday_reminds
         ]
+
+    @exception_mapper
+    async def get_birthday_reminders_stats(self) -> BirthdayRemindersStats:
+        result = await self._session.execute(
+            select(
+                func.count(BirthdayRemindModel.id),
+                func.count().filter(
+                    BirthdayRemindModel.created_at
+                    > func.now() - timedelta(days=1)
+                ),
+                func.count().filter(
+                    BirthdayRemindModel.created_at
+                    > func.now() - timedelta(weeks=1)
+                ),
+                func.count().filter(
+                    BirthdayRemindModel.created_at
+                    > func.now() - timedelta(days=30)
+                ),
+            )
+        )
+
+        return BirthdayRemindersStats(*result.one())
