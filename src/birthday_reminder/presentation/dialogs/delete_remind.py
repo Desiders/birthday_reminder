@@ -1,8 +1,7 @@
 from logging import getLogger
-from typing import Literal
 from uuid import UUID
 
-from aiogram import Bot
+from aiogram import Bot, F
 from aiogram.types import CallbackQuery, InaccessibleMessage, Message
 from aiogram_dialog import Dialog, DialogManager, StartMode, Window
 from aiogram_dialog.widgets.common import Whenable
@@ -35,15 +34,14 @@ from .states import DeleteRemind, MainMenu
 __all__ = ["delete_remind"]
 
 REMINDERS_KEY = "reminders"
+REMINDERS_COUNT_KEY = "reminders_count"
 REMINDER_ID = "reminder"
 GROUP_ID = "reminders_group"
 
 logger = getLogger(__name__)
 
 
-async def reminders_getter(
-    dialog_manager: DialogManager, **_kwargs
-) -> dict[Literal["reminders"], list[BirthdayRemind]]:
+async def reminders_getter(dialog_manager: DialogManager, **_kwargs) -> dict:
     data = dialog_manager.middleware_data
     db_user: UserDB = data["db_user"]
     uow: UnitOfWork = data["uow"]
@@ -55,7 +53,7 @@ async def reminders_getter(
 
     reminders = await query(db_user.id)
 
-    return {REMINDERS_KEY: reminders}
+    return {REMINDERS_KEY: reminders, REMINDERS_COUNT_KEY: len(reminders)}
 
 
 def reminder_id_getter(reminder: BirthdayRemind) -> str:
@@ -163,7 +161,10 @@ async def delete_remind_confirmed(
 
 delete_remind = Dialog(
     Window(
-        Const("Select the reminder you want to delete"),
+        Const(
+            "Select the reminder you want to delete:",
+            when=F[REMINDERS_COUNT_KEY],
+        ),
         ScrollingGroup(
             Radio(
                 checked_text=Format("🔘 {item.name}"),
@@ -173,8 +174,13 @@ delete_remind = Dialog(
                 items=REMINDERS_KEY,
             ),
             id=GROUP_ID,
+            when=F[REMINDERS_COUNT_KEY],
             width=4,
             height=4,
+        ),
+        Const(
+            "You don't have any reminders yet 🐨",
+            when=~F[REMINDERS_COUNT_KEY],
         ),
         Row(
             MAIN_MENU_BUTTON,

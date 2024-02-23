@@ -12,6 +12,10 @@ class CreateRemind(StatesGroup):
     confirm = State()
 
 
+class ShowReminders(StatesGroup):
+    show = State()
+
+
 class DeleteRemind(StatesGroup):
     select_remind = State()
     confirm = State()

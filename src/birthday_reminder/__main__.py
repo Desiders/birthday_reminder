@@ -10,6 +10,7 @@ from .presentation.dialogs import (
     create_remind_dialog,
     delete_remind_dialog,
     main_menu_dialog,
+    show_reminders_dialog,
 )
 from .presentation.handlers import start_router
 from .presentation.middlewares import DatabaseMiddleware, UserMiddleware
@@ -30,6 +31,7 @@ async def main():
     main_router.include_router(create_remind_dialog)
     main_router.include_router(main_menu_dialog)
     main_router.include_router(delete_remind_dialog)
+    main_router.include_router(show_reminders_dialog)
     main_router.include_router(start_router)
 
     engine = get_engine(config.database)
