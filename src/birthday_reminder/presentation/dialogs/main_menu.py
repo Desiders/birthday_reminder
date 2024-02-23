@@ -7,7 +7,7 @@ from aiogram.types import (
     InaccessibleMessage,
     Message,
 )
-from aiogram_dialog import Dialog, DialogManager, Window
+from aiogram_dialog import Dialog, DialogManager, StartMode, Window
 from aiogram_dialog.widgets.kbd import Button
 from aiogram_dialog.widgets.text import Const
 
@@ -20,7 +20,7 @@ from birthday_reminder.application.common import UnitOfWork
 from birthday_reminder.domain.user.entities import User as UserDB
 
 from .common import CREATE_REMIND_BUTTON
-from .states import MainMenu
+from .states import CreateRemind, MainMenu
 
 logger = getLogger(__name__)
 
@@ -57,9 +57,24 @@ async def show_reminders(
         GetByUserIDAndSortByNearestRequest(db_user.id, today.day, today.month)
     )
 
+    if len(reminders) == 0:
+        logger.debug("Send message with no reminders")
+
+        text = (
+            "You don't have any reminders yet."
+            "Let's start by creating a reminder."
+        )
+
+        await manager.start(
+            CreateRemind.select_month,
+            mode=StartMode.RESET_STACK,
+        )
+
+        return
+
     text = "Your reminders:\n\n"
 
-    for remind in reminders:
+    for number, remind in enumerate(reminders, start=1):
         # Get datetime of the birthday by its day and month.
         try:
             birth_date = date(today.year, remind.month, remind.day)
@@ -76,13 +91,13 @@ async def show_reminders(
 
                     difference = birth_date - today
 
-                    text += f"{remind.name}, ~{birth_date.strftime('%d.%m')} (in ~{difference.days} days, not leap year)\n"
+                    text += f"{number}) {remind.name}, ~{birth_date.strftime('%d.%m')} (in ~{difference.days} days, not leap year)\n"
 
                     continue
 
             difference = birth_date - today
 
-            text += f"{remind.name}, {birth_date.strftime('%d.%m')} (in {difference.days} days)\n"
+            text += f"{number}) {remind.name}, {birth_date.strftime('%d.%m')} (in {difference.days} days)\n"
         except ValueError:
             # If the date is can't be in this year (extra day of leap year), then minus 1 day.
             birth_date = date(today.year, remind.month, remind.day - 1)
@@ -95,7 +110,7 @@ async def show_reminders(
 
                     difference = birth_date - today
 
-                    text += f"{remind.name}, {birth_date.strftime('%d.%m')} (in {difference.days} days)\n"
+                    text += f"{number}) {remind.name}, {birth_date.strftime('%d.%m')} (in {difference.days} days)\n"
 
                     continue
                 except ValueError:
@@ -105,7 +120,7 @@ async def show_reminders(
 
             difference = birth_date - today
 
-            text += f"{remind.name}, ~{birth_date.strftime('%d.%m')} (in ~{difference.days} days, not leap year)\n"
+            text += f"{number}) {remind.name}, ~{birth_date.strftime('%d.%m')} (in ~{difference.days} days, not leap year)\n"
 
     match callback_query.message:
         case Message():
