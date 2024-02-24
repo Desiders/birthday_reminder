@@ -29,6 +29,9 @@ from .presentation.scheduler import nearest_birthday_reminders_consumer
 
 logger = getLogger(__name__)
 
+# Check text in `Important`: https://docs.python.org/3/library/asyncio-task.html#asyncio.create_task
+background_tasks = set()
+
 
 async def main():
     config = load_config_from_env()
@@ -70,8 +73,13 @@ async def main():
     )
 
     async def on_startup():
-        asyncio.create_task(producer)
-        asyncio.create_task(consumer)
+        producer_task = asyncio.create_task(producer)
+        background_tasks.add(producer_task)
+        producer_task.add_done_callback(background_tasks.discard)
+
+        consumer_task = asyncio.create_task(consumer)
+        background_tasks.add(consumer_task)
+        consumer_task.add_done_callback(background_tasks.discard)
 
     async def on_shutdown():
         await session.close()
