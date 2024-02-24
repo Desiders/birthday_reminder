@@ -4,7 +4,18 @@ from logging import getLogger
 from aiogram import Bot, Dispatcher, Router
 from aiogram_dialog import setup_dialogs
 
+from birthday_reminder.adapters.database import SQLAlchemyUoW
+from birthday_reminder.adapters.database.repositories import (
+    BirthdayRemindReaderImpl,
+    UserReaderImpl,
+)
+from birthday_reminder.application.birthday_remind.queries import (
+    GetByInterval,
+)
+from birthday_reminder.application.user.queries import GetByID
+
 from .adapters.database import get_engine, get_session_factory
+from .application.scheduler import nearest_birthday_reminders_producer
 from .config import configure_logging, load_config_from_env
 from .presentation.dialogs import (
     create_remind_dialog,
@@ -14,6 +25,7 @@ from .presentation.dialogs import (
 )
 from .presentation.handlers import start_router, stats_router
 from .presentation.middlewares import DatabaseMiddleware, UserMiddleware
+from .presentation.scheduler import nearest_birthday_reminders_consumer
 
 logger = getLogger(__name__)
 
@@ -42,6 +54,31 @@ async def main():
     for observer in main_router.observers.values():
         observer.outer_middleware.register(DatabaseMiddleware(pool))
         observer.outer_middleware.register(UserMiddleware())
+
+    session = pool()
+
+    queue = asyncio.Queue()
+    birthday_reader = BirthdayRemindReaderImpl(session)
+    user_reader = UserReaderImpl(session)
+    uow = SQLAlchemyUoW(session)
+
+    producer = nearest_birthday_reminders_producer(
+        queue, GetByInterval(birthday_reader, uow)
+    )
+    consumer = nearest_birthday_reminders_consumer(
+        queue, GetByID(user_reader, uow), bot
+    )
+
+    async def on_startup():
+        asyncio.create_task(producer)
+        asyncio.create_task(consumer)
+
+    async def on_shutdown():
+        await session.close()
+        await engine.dispose()
+
+    main_router.startup.register(on_startup)
+    main_router.shutdown.register(on_shutdown)
 
     dispatcher = Dispatcher()
     dispatcher.include_router(main_router)

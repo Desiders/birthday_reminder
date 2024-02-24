@@ -128,3 +128,68 @@ class BirthdayRemindReaderImpl(Repo, BirthdayRemindReader):
         )
 
         return BirthdayRemindersStats(*result.one())
+
+    @exception_mapper
+    async def get_by_interval(
+        self,
+        start_day: int,
+        start_month: int,
+        end_day: int,
+        end_month: int,
+    ) -> list[BirthdayRemind]:
+        if start_month > end_month:
+            # If the start month is greater than the end month,
+            # it means that the interval includes the end of the year and the beginning of the year.
+            # So we need to get birthday reminders for the end of the year and the beginning of the year separately.
+            birthday_reminds = await self._session.scalars(
+                select(BirthdayRemindModel).where(
+                    (
+                        (BirthdayRemindModel.month == start_month)
+                        & (BirthdayRemindModel.day >= start_day)
+                    )
+                    | (
+                        (BirthdayRemindModel.month == end_month)
+                        & (BirthdayRemindModel.day <= end_day)
+                    )
+                    | (
+                        (BirthdayRemindModel.month > start_month)
+                        & (BirthdayRemindModel.month <= 12)
+                    )
+                    | (
+                        (BirthdayRemindModel.month >= 1)
+                        & (BirthdayRemindModel.month < end_month)
+                    )
+                )
+            )
+        elif start_month < end_month:
+            birthday_reminds = await self._session.scalars(
+                select(BirthdayRemindModel).where(
+                    (
+                        (BirthdayRemindModel.month == start_month)
+                        & (BirthdayRemindModel.day >= start_day)
+                    )
+                    | (
+                        (BirthdayRemindModel.month == end_month)
+                        & (BirthdayRemindModel.day <= end_day)
+                    )
+                    | (
+                        (BirthdayRemindModel.month > start_month)
+                        & (BirthdayRemindModel.month < end_month)
+                    )
+                )
+            )
+        else:
+            month = start_month
+
+            birthday_reminds = await self._session.scalars(
+                select(BirthdayRemindModel).where(
+                    (BirthdayRemindModel.month == month)
+                    & (BirthdayRemindModel.day >= start_day)
+                    & (BirthdayRemindModel.day <= end_day)
+                )
+            )
+
+        return [
+            model_to_birthday_remind(birthday_remind)
+            for birthday_remind in birthday_reminds
+        ]

@@ -26,3 +26,13 @@ class Reader(Protocol):
     @abstractmethod
     async def get_birthday_reminders_stats(self) -> BirthdayRemindersStats:
         raise NotImplementedError
+
+    @abstractmethod
+    async def get_by_interval(
+        self,
+        start_day: int,
+        start_month: int,
+        end_day: int,
+        end_month: int,
+    ) -> list[BirthdayRemind]:
+        raise NotImplementedError
