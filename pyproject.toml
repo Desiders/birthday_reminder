@@ -18,6 +18,7 @@ dependencies = [
     "uuid6>=2024.1",
     "asyncpg>=0.29,<1",
     "alembic~=1.13",
+    "fluent.runtime",
 ]
 
 [project.urls]
