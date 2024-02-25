@@ -3,6 +3,7 @@ from aiogram.fsm.state import State, StatesGroup
 
 class MainMenu(StatesGroup):
     menu = State()
+    capybara = State()
 
 
 class CreateRemind(StatesGroup):

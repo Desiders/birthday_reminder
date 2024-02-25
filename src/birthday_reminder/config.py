@@ -26,6 +26,11 @@ class Bot:
 
 
 @dataclass
+class Media:
+    capybara_path: Path
+
+
+@dataclass
 class Logging:
     level: str
     path: Path | None = None
@@ -50,6 +55,7 @@ class Database:
 @dataclass
 class Config:
     bot: Bot
+    media: Media
     logging: Logging
     database: Database
 
@@ -58,6 +64,7 @@ def load_config_from_env() -> Config:
     raw_path = environ.get("LOGGING_PATH")
 
     bot = Bot(token=environ["BOT_TOKEN"])
+    media = Media(capybara_path=Path(environ["MEDIA_CAPYBARA_PATH"]))
     logging = Logging(
         level=environ.get("LOGGING_LEVEL", "INFO").strip(),
         path=Path(raw_path.strip()) if raw_path else None,
@@ -74,7 +81,7 @@ def load_config_from_env() -> Config:
         database=environ["POSTGRES_DB"].strip(),
     )
 
-    return Config(bot=bot, logging=logging, database=database)
+    return Config(bot=bot, media=media, logging=logging, database=database)
 
 
 def configure_logging(config: Logging) -> None:

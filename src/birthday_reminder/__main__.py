@@ -100,7 +100,9 @@ async def main():
         extra={"allowed_updates": allowed_updates},
     )
 
-    await dispatcher.start_polling(bot, allowed_updates=allowed_updates)
+    await dispatcher.start_polling(
+        bot, allowed_updates=allowed_updates, config=config
+    )
 
 
 if __name__ == "__main__":
