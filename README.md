@@ -7,8 +7,6 @@ Telegram bot to remind you of friends' birthdays
 - Copy `.env.example` to `.env` and fill it with your data
 
 ## Running and stopping the application
-Create `.env` file in the root directory of the project and fill it with the following content
-
 Before running the bot you need to run migrations. To do this run the following command:
 
 ```bash
