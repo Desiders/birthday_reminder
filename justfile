@@ -8,6 +8,10 @@ help:
 run-docker:
 	docker compose --profile bot up --build
 
+# Stop bot
+stop-docker:
+    docker compose stop bot postgres postgres_migration
+
 # Run database migration in docker container
 migration-docker:
 	docker compose --profile migration up --build
@@ -36,7 +40,7 @@ run:
 # Run ruff linter check with `pyproject.toml` configuration and fix issues
 ruff-lint:
     source .venv/bin/activate && \
-    ruff check --config=pyproject.toml --fix . 
+    ruff check --config=pyproject.toml --fix .
 
 # Run ruff formatter with `pyproject.toml` configuration
 ruff-format:
