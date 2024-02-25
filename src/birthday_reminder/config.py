@@ -38,6 +38,13 @@ class Logging:
 
 
 @dataclass
+class Localization:
+    path: Path
+    default: str = "en"
+    locales: frozenset[str] = frozenset({"en", "ru"})
+
+
+@dataclass
 class Database:
     host: str
     port: int
@@ -57,6 +64,7 @@ class Config:
     bot: Bot
     media: Media
     logging: Logging
+    localization: Localization
     database: Database
 
 
@@ -73,6 +81,13 @@ def load_config_from_env() -> Config:
         .lower()
         == "true",
     )
+    localization = Localization(
+        path=Path(environ["LOCALIZATION_PATH"].strip()),
+        default=environ.get("LOCALIZATION_DEFAULT", "en").strip(),
+        locales=frozenset(
+            environ.get("LOCALIZATION_LOCALES", "en,ru").strip().split(",")
+        ),
+    )
     database = Database(
         host=environ["POSTGRES_HOST"].strip(),
         port=int(environ["POSTGRES_PORT"].strip()),
@@ -81,7 +96,13 @@ def load_config_from_env() -> Config:
         database=environ["POSTGRES_DB"].strip(),
     )
 
-    return Config(bot=bot, media=media, logging=logging, database=database)
+    return Config(
+        bot=bot,
+        media=media,
+        logging=logging,
+        localization=localization,
+        database=database,
+    )
 
 
 def configure_logging(config: Logging) -> None:
