@@ -11,6 +11,7 @@ from birthday_reminder.application.birthday_remind.queries import (
 from birthday_reminder.application.common import UnitOfWork
 from birthday_reminder.application.user import UserReader
 from birthday_reminder.application.user.queries import GetUsersStats
+from birthday_reminder.presentation.i18n import FormatText
 
 logger = getLogger(__name__)
 
@@ -23,6 +24,7 @@ async def stats(
     uow: UnitOfWork,
     user_reader: UserReader,
     birthday_remind_reader: BirthdayRemindReader,
+    format_text: FormatText,
 ) -> None:
     users_stats_query = GetUsersStats(user_reader, uow)
     birthday_reminders_stats_query = GetBirthdayRemindersStats(
@@ -32,18 +34,20 @@ async def stats(
     users_stats = await users_stats_query()
     birthday_reminders_stats = await birthday_reminders_stats_query()
 
-    text = (
-        "Users stats:\n\n"
-        f"Total users: {users_stats.count}\n"
-        f"New users today: {users_stats.new_users_per_day}\n"
-        f"New users this week: {users_stats.new_users_per_week}\n"
-        f"New users this month: {users_stats.new_users_per_month}\n\n"
-        "Birthday reminders stats:\n\n"
-        f"Total birthday reminders: {birthday_reminders_stats.count}\n"
-        f"New birthday reminders today: {birthday_reminders_stats.new_birthday_remiders_per_day}\n"
-        f"New birthday reminders this week: {birthday_reminders_stats.new_birthday_remiders_per_week}\n"
-        f"New birthday reminders this month: {birthday_reminders_stats.new_birthday_remiders_per_month}\n"
-        f"Average birthday reminders per user: {birthday_reminders_stats.count / users_stats.count}\n"
+    text = format_text(
+        "stats",
+        {
+            "total_users": users_stats.count,
+            "new_users_today": users_stats.new_users_per_day,
+            "new_users_week": users_stats.new_users_per_week,
+            "new_users_month": users_stats.new_users_per_month,
+            "total_reminders": birthday_reminders_stats.count,
+            "new_reminders_today": birthday_reminders_stats.new_birthday_remiders_per_day,
+            "new_reminders_week": birthday_reminders_stats.new_birthday_remiders_per_week,
+            "new_reminders_month": birthday_reminders_stats.new_birthday_remiders_per_month,
+            "avg_reminders_per_user": birthday_reminders_stats.count
+            / users_stats.count,
+        },
     )
 
     await message.answer(

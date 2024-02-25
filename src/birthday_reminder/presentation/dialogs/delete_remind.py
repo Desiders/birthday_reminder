@@ -12,7 +12,7 @@ from aiogram_dialog.widgets.kbd import (
     ScrollingGroup,
     Select,
 )
-from aiogram_dialog.widgets.text import Const, Format
+from aiogram_dialog.widgets.text import Format
 
 from birthday_reminder.application.birthday_remind import (
     BirthdayRemindReader,
@@ -25,6 +25,11 @@ from birthday_reminder.application.birthday_remind.queries import GetByUserID
 from birthday_reminder.application.common import UnitOfWork
 from birthday_reminder.domain.birthday_remind.entities import BirthdayRemind
 from birthday_reminder.domain.user.entities import User as UserDB
+from birthday_reminder.presentation.i18n import (
+    I18N_FORMAT_KEY,
+    FormatText,
+    I18NFormat,
+)
 
 from .common import MAIN_MENU_BUTTON
 from .states import DeleteRemind, MainMenu
@@ -110,10 +115,8 @@ async def delete_remind_confirmed(
 
     await command(reminder_id)
 
-    text = (
-        "You have deleted a reminder.\n\n"
-        "If you want to create reminder or manage existing ones, use buttons below."
-    )
+    format_text: FormatText = manager.middleware_data[I18N_FORMAT_KEY]
+    text = format_text("delete-remind-success", None)
 
     match callback_query.message:
         case Message():
@@ -161,10 +164,7 @@ async def delete_remind_confirmed(
 
 delete_remind = Dialog(
     Window(
-        Const(
-            "Select the reminder you want to delete:",
-            when=F[REMINDERS_COUNT_KEY],
-        ),
+        I18NFormat("delete-remind-select-remind", when=F[REMINDERS_COUNT_KEY]),
         ScrollingGroup(
             Select(
                 text=Format("{item.name}"),
@@ -178,20 +178,17 @@ delete_remind = Dialog(
             width=4,
             height=4,
         ),
-        Const(
-            "You don't have any reminders yet 🐨",
-            when=~F[REMINDERS_COUNT_KEY],
-        ),
+        I18NFormat("reminders-empty", when=~F[REMINDERS_COUNT_KEY]),
         MAIN_MENU_BUTTON,
         getter=reminders_getter,
         state=DeleteRemind.select_remind,
     ),
     Window(
-        Format("You are about to delete the reminder?"),
+        I18NFormat("delete-remind-confirm"),
         Row(
-            Back(Const("<< Select reminder")),
+            Back(I18NFormat("delete-remind-select-remind-button")),
             Button(
-                text=Const("Confirm >>"),
+                text=I18NFormat("confirm-button"),
                 id="confirm",
                 on_click=delete_remind_confirmed,
             ),

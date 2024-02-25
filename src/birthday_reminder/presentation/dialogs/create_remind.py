@@ -19,7 +19,7 @@ from aiogram_dialog.widgets.kbd import (
     Row,
     Select,
 )
-from aiogram_dialog.widgets.text import Const, Format
+from aiogram_dialog.widgets.text import Format
 from uuid6 import uuid7
 
 from birthday_reminder.application.birthday_remind import BirthdayRemindRepo
@@ -31,6 +31,11 @@ from birthday_reminder.domain.birthday_remind.entities import (
     BirthdayRemind as BirthdayRemindDB,
 )
 from birthday_reminder.domain.user.entities import User as UserDB
+from birthday_reminder.presentation.i18n import (
+    I18N_FORMAT_KEY,
+    FormatText,
+    I18NFormat,
+)
 
 from .common import MAIN_MENU_BUTTON
 from .states import CreateRemind, MainMenu
@@ -50,6 +55,9 @@ class Month:
     number: int
     name: str
 
+    def translate(self, format_text: FormatText) -> str:
+        return format_text(self.name, None)
+
 
 MONTHS = [
     Month(1, "January"),
@@ -67,8 +75,15 @@ MONTHS = [
 ]
 
 
-async def months_getter(**_kwargs):
-    return {MONTHS_KEY: MONTHS}
+async def months_getter(dialog_manager: DialogManager, **_kwargs):
+    format_text: FormatText = dialog_manager.middleware_data[I18N_FORMAT_KEY]
+
+    return {
+        MONTHS_KEY: [
+            Month(month.number, month.translate(format_text))
+            for month in MONTHS
+        ]
+    }
 
 
 def month_number_getter(month: Month) -> int:
@@ -141,21 +156,35 @@ async def name_handler(
         widget: The widget that triggered the handler.
         manager: The dialog manager.
     """
+
     if message.text is None:
         logger.debug("Empty message")
 
+        format_text: FormatText = manager.middleware_data[I18N_FORMAT_KEY]
+        text = format_text("create-remind-select-user-empty", None)
+
         await message.answer(
-            "Input the name of syour friend. It can't be empty."
+            text,
+            parse_mode=None,
+            disable_web_page_preview=True,
+            disable_notification=False,
         )
 
         return
 
-    if len(message.text) > 1000:
+    if len(message.text) > 100:
         logger.debug("Too long message")
 
+        format_text: FormatText = manager.middleware_data[I18N_FORMAT_KEY]
+        text = format_text("create-remind-select-user-too-long", None)
+
         await message.answer(
-            "The name of your friend is too long. It should be less than 1000 characters."
+            text,
+            parse_mode=None,
+            disable_web_page_preview=True,
+            disable_notification=False,
         )
+
         return
 
     manager.dialog_data["name"] = message.text
@@ -172,7 +201,14 @@ async def remind_info_getter(dialog_manager: DialogManager, **_kwargs) -> dict:
     day: int = dialog_manager.dialog_data["day"]
     name: str = dialog_manager.dialog_data["name"]
 
+    first_name = (
+        dialog_manager.event.from_user.full_name
+        if dialog_manager.event.from_user
+        else "capybara"
+    )
+
     return dict(
+        first_name=first_name,  # This need in the text
         month=month,
         day=day,
         name=name,
@@ -224,12 +260,8 @@ async def create_remind_confirmed(
         )
     )
 
-    text = (
-        "Congratulations! You have created a reminder for your friend.\n"
-        "I will notify you on the day of the event.\n\n"
-        "If you want to create another reminder or manage existing ones, "
-        "use buttons below."
-    )
+    format_text: FormatText = manager.middleware_data[I18N_FORMAT_KEY]
+    text = format_text("create-remind-success", None)
 
     match callback_query.message:
         case Message():
@@ -277,7 +309,7 @@ async def create_remind_confirmed(
 
 create_remind = Dialog(
     Window(
-        Const("Select the month of your friend's birth:"),
+        I18NFormat("create-remind-select-month"),
         Group(
             Select(
                 text=Format("{item.name}"),
@@ -293,7 +325,7 @@ create_remind = Dialog(
         state=CreateRemind.select_month,
     ),
     Window(
-        Const("Select the day of your friend's birth:"),
+        I18NFormat("create-remind-select-day"),
         Group(
             Select(
                 text=Format("{item.number}"),
@@ -304,25 +336,23 @@ create_remind = Dialog(
             ),
             width=6,
         ),
-        Back(Const("<< Select month")),
+        Back(I18NFormat("create-remind-select-month-button")),
         getter=days_getter,
         state=CreateRemind.select_day,
     ),
     Window(
-        Const("Input the name of your friend:"),
-        Back(Const("<< Select day")),
+        I18NFormat("create-remind-select-user"),
+        Back(I18NFormat("create-remind-select-day-button")),
         MessageInput(name_handler, content_types=ContentType.TEXT),
         state=CreateRemind.select_user,
         preview_add_transitions=[Next()],  # hint for graph rendering
     ),
     Window(
-        Format(
-            "You are about to create a reminder for {name} on {day} {month.name}?"
-        ),
+        I18NFormat("create-remind-confirm"),
         Row(
-            Back(Const("<< Input user")),
+            Back(I18NFormat("create-remind-input-user-button")),
             Button(
-                text=Const("Confirm >>"),
+                text=I18NFormat("confirm-button"),
                 id="confirm",
                 on_click=create_remind_confirmed,
             ),

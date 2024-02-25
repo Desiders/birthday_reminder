@@ -6,9 +6,9 @@ from aiogram_dialog import Dialog, DialogManager, Window
 from aiogram_dialog.api.entities import MediaAttachment
 from aiogram_dialog.widgets.kbd import Back, Next, Row, Start
 from aiogram_dialog.widgets.media import DynamicMedia
-from aiogram_dialog.widgets.text import Const
 
 from birthday_reminder.config import Config
+from birthday_reminder.presentation.i18n import I18NFormat
 
 from .common import CREATE_REMIND_BUTTON
 from .states import DeleteRemind, MainMenu, ShowReminders
@@ -21,8 +21,6 @@ async def capybara_getter(
     config: Config,
     **kwargs,
 ) -> dict[Literal["capybara"], MediaAttachment]:
-    logger.debug("capybara_getter", extra={"_config": config})
-
     return {
         "capybara": MediaAttachment(
             path=str(config.media.capybara_path),
@@ -33,26 +31,26 @@ async def capybara_getter(
 
 main_menu = Dialog(
     Window(
-        Const("Select action:"),
+        I18NFormat("main-menu"),
         CREATE_REMIND_BUTTON,
         Row(
             Start(
-                text=Const("Show reminders"),
+                text=I18NFormat("main-menu-show-reminders"),
                 id="show_reminders",
                 state=ShowReminders.show,
             ),
             Start(
-                text=Const("Delete reminder"),
+                text=I18NFormat("main-menu-delete-reminder"),
                 id="delete_remind",
                 state=DeleteRemind.select_remind,
             ),
         ),
-        Next(Const("Show capybara")),
+        Next(I18NFormat("main-menu-show-capybara")),
         state=MainMenu.menu,
     ),
     Window(
-        Const("Capybara see you"),
-        Back(Const("Oh no, I'm scared!")),
+        I18NFormat("show-capybara"),
+        Back(I18NFormat("show-capybara-back")),
         DynamicMedia("capybara"),
         state=MainMenu.capybara,
         getter=capybara_getter,

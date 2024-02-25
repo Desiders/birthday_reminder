@@ -10,6 +10,7 @@ from birthday_reminder.application.common import UnitOfWork
 from birthday_reminder.application.user import UserRepo
 from birthday_reminder.application.user.commands import AddUser
 from birthday_reminder.domain.user.entities import User as UserDB
+from birthday_reminder.presentation.i18n import FormatText
 
 from ..dialogs.states import CreateRemind, MainMenu
 from ..filters import is_new_user_filter
@@ -28,6 +29,7 @@ async def start_for_new_user(
     user: User,
     uow: UnitOfWork,
     user_repo: UserRepo,
+    format_text: FormatText,
 ) -> None:
     logger.debug("Start command for new user")
 
@@ -37,11 +39,7 @@ async def start_for_new_user(
     else:
         first_name = "capybara"
 
-    text = (
-        f"Hello, {first_name}!\n\n"
-        "I can help you remember your friends' birthdays. "
-        "Let's start by creating a reminder."
-    )
+    text = format_text("start", {"first_name": first_name})
 
     await message.answer(
         text,

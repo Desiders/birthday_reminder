@@ -3,7 +3,6 @@ from logging import getLogger
 
 from aiogram import F
 from aiogram_dialog import Dialog, DialogManager, Window
-from aiogram_dialog.widgets.text import Const, Format
 
 from birthday_reminder.application.birthday_remind import BirthdayRemindReader
 from birthday_reminder.application.birthday_remind.queries import (
@@ -12,6 +11,11 @@ from birthday_reminder.application.birthday_remind.queries import (
 )
 from birthday_reminder.application.common import UnitOfWork
 from birthday_reminder.domain.user.entities import User as UserDB
+from birthday_reminder.presentation.i18n import (
+    I18N_FORMAT_KEY,
+    FormatText,
+    I18NFormat,
+)
 
 from .common import MAIN_MENU_BUTTON
 from .states import ShowReminders
@@ -42,6 +46,8 @@ async def reminders_getter(dialog_manager: DialogManager, **_kwargs) -> dict:
 
     texts = []
 
+    format_text: FormatText = dialog_manager.middleware_data[I18N_FORMAT_KEY]
+
     for number, remind in enumerate(reminders, start=1):
         # Get datetime of the birthday by its day and month.
         try:
@@ -60,7 +66,17 @@ async def reminders_getter(dialog_manager: DialogManager, **_kwargs) -> dict:
                     difference = birth_date - today
 
                     texts.append(
-                        f"{number}) {remind.name}, ~{birth_date.strftime('%d.%m')} (in ~{difference.days} days, not leap year)"
+                        "{number}) {text}".format(
+                            number=number,
+                            text=format_text(
+                                "show-reminders-text-not-leap-year",
+                                {
+                                    "name": remind.name,
+                                    "date": birth_date.strftime("%d.%m"),
+                                    "days": difference.days,
+                                },
+                            ),
+                        ),
                     )
 
                     continue
@@ -68,7 +84,17 @@ async def reminders_getter(dialog_manager: DialogManager, **_kwargs) -> dict:
             difference = birth_date - today
 
             texts.append(
-                f"{number}) {remind.name}, {birth_date.strftime('%d.%m')} (in {difference.days} days)"
+                "{number}) {text}".format(
+                    number=number,
+                    text=format_text(
+                        "show-reminders-text",
+                        {
+                            "name": remind.name,
+                            "date": birth_date.strftime("%d.%m"),
+                            "days": difference.days,
+                        },
+                    ),
+                ),
             )
         except ValueError:
             # If the date is can't be in this year (extra day of leap year), then minus 1 day.
@@ -83,7 +109,17 @@ async def reminders_getter(dialog_manager: DialogManager, **_kwargs) -> dict:
                     difference = birth_date - today
 
                     texts.append(
-                        f"{number}) {remind.name}, {birth_date.strftime('%d.%m')} (in {difference.days} days)"
+                        "{number}) {text}".format(
+                            number=number,
+                            text=format_text(
+                                "show-reminders-text",
+                                {
+                                    "name": remind.name,
+                                    "date": birth_date.strftime("%d.%m"),
+                                    "days": difference.days,
+                                },
+                            ),
+                        ),
                     )
 
                     continue
@@ -95,7 +131,17 @@ async def reminders_getter(dialog_manager: DialogManager, **_kwargs) -> dict:
             difference = birth_date - today
 
             texts.append(
-                f"{number}) {remind.name}, ~{birth_date.strftime('%d.%m')} (in ~{difference.days} days, not leap year)"
+                "{number}) {text}".format(
+                    number=number,
+                    text=format_text(
+                        "show-reminders-text-not-leap-year",
+                        {
+                            "name": remind.name,
+                            "date": birth_date.strftime("%d.%m"),
+                            "days": difference.days,
+                        },
+                    ),
+                ),
             )
 
     return {
@@ -106,11 +152,8 @@ async def reminders_getter(dialog_manager: DialogManager, **_kwargs) -> dict:
 
 show_reminders = Dialog(
     Window(
-        Format("Your reminders:\n\n{reminders}", when=F[REMINDERS_COUNT_KEY]),
-        Const(
-            "You don't have any reminders yet 🐨",
-            when=~F[REMINDERS_COUNT_KEY],
-        ),
+        I18NFormat("show-reminders", when=F[REMINDERS_COUNT_KEY]),
+        I18NFormat("reminders-empty", when=~F[REMINDERS_COUNT_KEY]),
         MAIN_MENU_BUTTON,
         getter=reminders_getter,
         state=ShowReminders.show,
