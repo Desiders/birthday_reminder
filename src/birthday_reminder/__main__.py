@@ -3,6 +3,7 @@ from logging import getLogger
 
 from aiogram import Bot, Dispatcher, Router
 from aiogram_dialog import setup_dialogs
+from fluent.runtime import FluentLocalization, FluentResourceLoader
 
 from birthday_reminder.adapters.database import SQLAlchemyUoW
 from birthday_reminder.adapters.database.repositories import (
@@ -24,7 +25,11 @@ from .presentation.dialogs import (
     show_reminders_dialog,
 )
 from .presentation.handlers import start_router, stats_router
-from .presentation.middlewares import DatabaseMiddleware, UserMiddleware
+from .presentation.middlewares import (
+    DatabaseMiddleware,
+    I18nMiddleware,
+    UserMiddleware,
+)
 from .presentation.scheduler import nearest_birthday_reminders_consumer
 
 logger = getLogger(__name__)
@@ -53,6 +58,21 @@ async def main():
 
     engine = get_engine(config.database)
     pool = get_session_factory(engine)
+
+    i18n_middleware = I18nMiddleware(
+        l10ns={
+            locale: FluentLocalization(
+                [locale, config.localization.default],
+                ["main.ftl"],
+                FluentResourceLoader(str(config.localization.path)),
+            )
+            for locale in config.localization.locales
+        },
+        default_lang=config.localization.default,
+    )
+
+    main_router.message.middleware.register(i18n_middleware)
+    main_router.callback_query.middleware.register(i18n_middleware)
 
     for observer in main_router.observers.values():
         observer.outer_middleware.register(DatabaseMiddleware(pool))
