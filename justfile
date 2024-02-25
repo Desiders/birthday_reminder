@@ -22,7 +22,7 @@ down-docker:
 
 # Build docker image
 build-docker:
-	docker compose build
+	docker compose build bot postgres postgres_migration
 
 set dotenv-load
 

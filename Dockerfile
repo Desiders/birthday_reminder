@@ -15,7 +15,6 @@ RUN apt-get update \
 RUN python3 -m venv /opt/venv
 WORKDIR /build
 COPY ./pyproject.toml /build
-RUN mkdir /build/src
 RUN pip install --no-cache-dir --upgrade pip \
  && pip install --no-cache-dir setuptools wheel \
  && pip install --no-cache-dir /build
@@ -28,7 +27,7 @@ COPY ./src /app/src
 WORKDIR /app
 
 # This hack need to add possibility to run module without `src.` prefix
-# and stay in the same directory to run migrations with path `./src/birthday_reminder/adapters/database/migrations` 
+# and stay in the same directory to run migrations with path `./src/birthday_reminder/adapters/database/migrations`
 # (specified in `alembic.ini` file).
 # If you know how to do it better, please let me know.
 ENV PYTHONPATH "/app/src"
