@@ -17,7 +17,7 @@ WORKDIR /build
 COPY ./pyproject.toml /build
 RUN pip install --no-cache-dir --upgrade pip \
  && pip install --no-cache-dir setuptools wheel \
- && pip install --no-cache-dir /build
+ && pip install --no-cache-dir -e /build
 
 FROM python-base as production
 COPY --from=builder-base /opt/venv /opt/venv

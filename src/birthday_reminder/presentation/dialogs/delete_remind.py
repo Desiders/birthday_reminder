@@ -1,18 +1,16 @@
 from logging import getLogger
+from typing import Any, Literal
 from uuid import UUID
 
 from aiogram import Bot, F
 from aiogram.types import CallbackQuery, InaccessibleMessage, Message
 from aiogram_dialog import Dialog, DialogManager, StartMode, Window
-from aiogram_dialog.widgets.common import Whenable
 from aiogram_dialog.widgets.kbd import (
     Back,
     Button,
-    ManagedRadio,
-    Next,
-    Radio,
     Row,
     ScrollingGroup,
+    Select,
 )
 from aiogram_dialog.widgets.text import Const, Format
 
@@ -60,21 +58,23 @@ def reminder_id_getter(reminder: BirthdayRemind) -> str:
     return str(reminder.id)
 
 
-def remind_is_checked(
-    data: dict, widget: Whenable, dialog_manager: DialogManager
-) -> bool:
-    radio: ManagedRadio = dialog_manager.find(REMINDER_ID)  # type: ignore
+async def on_remind_selected(
+    callback: CallbackQuery,
+    widget: Any,
+    manager: DialogManager,
+    selected_item: str,
+) -> None:
+    manager.dialog_data["remind_id"] = UUID(selected_item)
 
-    return radio.get_checked() is not None
+    await manager.next()
 
 
-async def remind_info_getter(dialog_manager: DialogManager, **_kwargs) -> dict:
-    radio: ManagedRadio = dialog_manager.find(REMINDER_ID)  # type: ignore
-    reminder_id = UUID(radio.get_checked())  # type: ignore
+async def remind_info_getter(
+    dialog_manager: DialogManager, **_kwargs
+) -> dict[Literal["reminder_id"], UUID]:
+    remind_id: UUID = dialog_manager.dialog_data["remind_id"]
 
-    return dict(
-        reminder_id=reminder_id,
-    )
+    return {"reminder_id": remind_id}
 
 
 async def delete_remind_confirmed(
@@ -166,12 +166,12 @@ delete_remind = Dialog(
             when=F[REMINDERS_COUNT_KEY],
         ),
         ScrollingGroup(
-            Radio(
-                checked_text=Format("🔘 {item.name}"),
-                unchecked_text=Format("{item.name}"),
+            Select(
+                text=Format("{item.name}"),
                 id=REMINDER_ID,
                 item_id_getter=reminder_id_getter,
                 items=REMINDERS_KEY,
+                on_click=on_remind_selected,
             ),
             id=GROUP_ID,
             when=F[REMINDERS_COUNT_KEY],
@@ -182,22 +182,14 @@ delete_remind = Dialog(
             "You don't have any reminders yet 🐨",
             when=~F[REMINDERS_COUNT_KEY],
         ),
-        Row(
-            MAIN_MENU_BUTTON,
-            Next(
-                text=Const("Delete user >>"),
-                when=remind_is_checked,
-            ),
-        ),
+        MAIN_MENU_BUTTON,
         getter=reminders_getter,
         state=DeleteRemind.select_remind,
     ),
     Window(
         Format("You are about to delete the reminder?"),
         Row(
-            Back(
-                text=Const("<< Select reminder"),
-            ),
+            Back(Const("<< Select reminder")),
             Button(
                 text=Const("Confirm >>"),
                 id="confirm",

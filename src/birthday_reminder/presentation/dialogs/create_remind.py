@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from logging import getLogger
-from typing import Literal
+from typing import Any, Literal
 
 from aiogram import Bot
 from aiogram.types import (
@@ -10,16 +10,14 @@ from aiogram.types import (
     Message,
 )
 from aiogram_dialog import Dialog, DialogManager, StartMode, Window
-from aiogram_dialog.widgets.common import Whenable
 from aiogram_dialog.widgets.input import MessageInput
 from aiogram_dialog.widgets.kbd import (
     Back,
     Button,
     Group,
-    ManagedRadio,
     Next,
-    Radio,
     Row,
+    Select,
 )
 from aiogram_dialog.widgets.text import Const, Format
 from uuid6 import uuid7
@@ -77,12 +75,15 @@ def month_number_getter(month: Month) -> int:
     return month.number
 
 
-def month_is_checked(
-    data: dict, widget: Whenable, dialog_manager: DialogManager
-) -> bool:
-    radio: ManagedRadio = dialog_manager.find(MONTH_ID)  # type: ignore
+async def on_month_selected(
+    callback: CallbackQuery,
+    widget: Any,
+    manager: DialogManager,
+    selected_item: str,
+) -> None:
+    manager.dialog_data["month_number"] = int(selected_item)
 
-    return radio.get_checked() is not None
+    await manager.next()
 
 
 @dataclass
@@ -93,8 +94,7 @@ class Day:
 async def days_getter(
     dialog_manager: DialogManager, **_kwargs
 ) -> dict[Literal["days"], list[Day]]:
-    radio: ManagedRadio = dialog_manager.find(MONTH_ID)  # type: ignore
-    month_number: int = int(radio.get_checked())  # type: ignore
+    month_number: int = dialog_manager.dialog_data["month_number"]
 
     logger.debug("Month number", extra={"month_number": month_number})
 
@@ -115,12 +115,15 @@ def day_number_getter(day: Day) -> int:
     return day.number
 
 
-def day_is_checked(
-    data: dict, widget: Whenable, dialog_manager: DialogManager
-) -> bool:
-    radio: ManagedRadio = dialog_manager.find(DAY_ID)  # type: ignore
+async def on_day_selected(
+    callback: CallbackQuery,
+    widget: Any,
+    manager: DialogManager,
+    selected_item: str,
+) -> None:
+    manager.dialog_data["day"] = int(selected_item)
 
-    return radio.get_checked() is not None
+    await manager.next()
 
 
 async def name_handler(
@@ -163,14 +166,11 @@ async def name_handler(
 
 
 async def remind_info_getter(dialog_manager: DialogManager, **_kwargs) -> dict:
-    radio: ManagedRadio = dialog_manager.find(MONTH_ID)  # type: ignore
-    month_number = int(radio.get_checked())  # type: ignore
+    month_number: int = dialog_manager.dialog_data["month_number"]
     month = next((m for m in MONTHS if m.number == month_number))
 
-    radio = dialog_manager.find(DAY_ID)  # type: ignore
-    day = int(radio.get_checked())  # type: ignore
-
-    name = dialog_manager.dialog_data["name"]
+    day: int = dialog_manager.dialog_data["day"]
+    name: str = dialog_manager.dialog_data["name"]
 
     return dict(
         month=month,
@@ -279,54 +279,38 @@ create_remind = Dialog(
     Window(
         Const("Select the month of your friend's birth:"),
         Group(
-            Radio(
-                checked_text=Format("🔘 {item.name}"),
-                unchecked_text=Format("{item.name}"),
+            Select(
+                text=Format("{item.name}"),
                 id=MONTH_ID,
                 item_id_getter=month_number_getter,
                 items=MONTHS_KEY,
+                on_click=on_month_selected,
             ),
             width=3,
         ),
-        Row(
-            MAIN_MENU_BUTTON,
-            Next(
-                text=Const("Select day >>"),
-                when=month_is_checked,
-            ),
-        ),
+        MAIN_MENU_BUTTON,
         getter=months_getter,
         state=CreateRemind.select_month,
     ),
     Window(
         Const("Select the day of your friend's birth:"),
         Group(
-            Radio(
-                checked_text=Format("🔘 {item.number}"),
-                unchecked_text=Format("{item.number}"),
+            Select(
+                text=Format("{item.number}"),
                 id=DAY_ID,
                 item_id_getter=day_number_getter,
                 items=DAYS_KEY,
+                on_click=on_day_selected,
             ),
             width=6,
         ),
-        Row(
-            Back(
-                text=Const("<< Select month"),
-            ),
-            Next(
-                text=Const("Input user >>"),
-                when=day_is_checked,
-            ),
-        ),
+        Back(Const("<< Select month")),
         getter=days_getter,
         state=CreateRemind.select_day,
     ),
     Window(
         Const("Input the name of your friend:"),
-        Back(
-            text=Const("<< Select day"),
-        ),
+        Back(Const("<< Select day")),
         MessageInput(name_handler, content_types=ContentType.TEXT),
         state=CreateRemind.select_user,
         preview_add_transitions=[Next()],  # hint for graph rendering
@@ -336,9 +320,7 @@ create_remind = Dialog(
             "You are about to create a reminder for {name} on {day} {month.name}?"
         ),
         Row(
-            Back(
-                text=Const("<< Input user"),
-            ),
+            Back(Const("<< Input user")),
             Button(
                 text=Const("Confirm >>"),
                 id="confirm",

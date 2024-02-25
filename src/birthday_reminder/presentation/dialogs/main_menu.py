@@ -47,18 +47,12 @@ main_menu = Dialog(
                 state=DeleteRemind.select_remind,
             ),
         ),
-        Next(
-            text=Const("Show capybara"),
-            id="show_capybara",
-        ),
+        Next(Const("Show capybara")),
         state=MainMenu.menu,
     ),
     Window(
         Const("Capybara see you"),
-        Back(
-            Const("Oh no, I'm scared!"),
-            id="main_menu",
-        ),
+        Back(Const("Oh no, I'm scared!")),
         DynamicMedia("capybara"),
         state=MainMenu.capybara,
         getter=capybara_getter,
