@@ -4,7 +4,7 @@ Telegram bot to remind you of friends' birthdays
 ## Installation
 - Install [Docker](https://docs.docker.com/get-docker/), [Docker Compose](https://docs.docker.com/compose/install/) and [just](https://github.com/casey/just#installation)
 - Clone this repository `git clone https://github.com/Desiders/birthday_reminder.git`
-- Copy `.env.example`d to `.env` and fill it with your data
+- Copy `.env.example` to `.env` and fill it with your data
 
 ## Running and stopping the application
 Create `.env` file in the root directory of the project and fill it with the following content
