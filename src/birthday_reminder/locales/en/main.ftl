@@ -2,7 +2,7 @@ start =
     Hello, { $first_name }!
 
     I can help you remember your friends' birthdays.
-    Let's start by creating a reminder.
+    Before we start, please select your language:
 
 stats =
     Stats of users and reminders:
@@ -19,6 +19,7 @@ stats =
     Average reminders per user: { $avg_reminders_per_user }
 
 create-remind-select-month =
+    Let's start creating a birthday reminder for your friend.
     What month is your friend's birthday?
 
 create-remind-select-day =
@@ -34,7 +35,7 @@ create-remind-select-user-too-long =
     A friend's name is too long. It should be shorter than 100 characters.
 
 create-remind-confirm =
-    You are about to create a reminder for { $first_name }'s birthday?
+    You are about to create a reminder for { $name }'s birthday?
 
 create-remind-success =
     Congratulations! You have created a reminder of a friend's birthday.
@@ -63,7 +64,7 @@ delete-remind-success =
     If you want to create reminder or manage existing ones, use buttons below:
 
 delete-remind-select-remind-button =
-    << Select reminder
+    << Go back
 
 reminders-empty =
     You don't have any reminders yet 🐨
