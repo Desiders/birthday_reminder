@@ -7,6 +7,7 @@ from . import models
 def model_to_user(user: models.User) -> User:
     return User(
         id=user.id,
+        language_code=user.language_code,
         tg_id=user.tg_id,
     )
 
@@ -14,6 +15,7 @@ def model_to_user(user: models.User) -> User:
 def user_to_model(user: User) -> models.User:
     return models.User(
         id=user.id,
+        language_code=user.language_code,
         tg_id=user.tg_id,
     )
 

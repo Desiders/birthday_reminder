@@ -1,3 +1,4 @@
-__all__ = ["AddUser"]
+__all__ = ["AddUser", "UpdateUser"]
 
 from .add import AddUser
+from .update import UpdateUser

@@ -23,6 +23,10 @@ class UserRepoImpl(Repo, UserRepo):
 
         await self._session.flush()
 
+    @exception_mapper
+    async def update(self, user: User) -> None:
+        await self._session.merge(user_to_model(user))
+
 
 class UserReaderImpl(Repo, UserReader):
     @exception_mapper

@@ -16,4 +16,5 @@ class User(TimedBaseModel):
         default=uuid7,
         server_default=sa.func.uuid_generate_v7(),
     )
+    language_code: Mapped[str] = mapped_column(nullable=True)
     tg_id: Mapped[int] = mapped_column(unique=True, nullable=False)
