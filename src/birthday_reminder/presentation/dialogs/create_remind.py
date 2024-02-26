@@ -201,14 +201,7 @@ async def remind_info_getter(dialog_manager: DialogManager, **_kwargs) -> dict:
     day: int = dialog_manager.dialog_data["day"]
     name: str = dialog_manager.dialog_data["name"]
 
-    first_name = (
-        dialog_manager.event.from_user.full_name
-        if dialog_manager.event.from_user
-        else "capybara"
-    )
-
     return dict(
-        first_name=first_name,  # This need in the text
         month=month,
         day=day,
         name=name,
@@ -282,7 +275,7 @@ async def create_remind_confirmed(
                 "Inaccessible message. Try to send a message in private chat."
             )
 
-            bot: Bot = manager.middleware_data["bot"]  # type: ignore
+            bot: Bot = manager.middleware_data["bot"]
 
             await bot.send_message(
                 callback_query.from_user.id,

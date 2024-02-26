@@ -2,6 +2,7 @@ import asyncio
 from logging import getLogger
 
 from aiogram import Bot, Dispatcher, Router
+from aiogram.types import BotCommand, BotCommandScopeAllPrivateChats
 from aiogram_dialog import setup_dialogs
 from fluent.runtime import FluentLocalization, FluentResourceLoader
 
@@ -22,9 +23,10 @@ from .presentation.dialogs import (
     create_remind_dialog,
     delete_remind_dialog,
     main_menu_dialog,
+    select_language_dialog,
     show_reminders_dialog,
 )
-from .presentation.handlers import start_router, stats_router
+from .presentation.handlers import language_router, start_router, stats_router
 from .presentation.middlewares import (
     DatabaseMiddleware,
     I18nMiddleware,
@@ -36,6 +38,23 @@ logger = getLogger(__name__)
 
 # Check text in `Important`: https://docs.python.org/3/library/asyncio-task.html#asyncio.create_task
 background_tasks = set()
+
+
+async def set_bot_commands(bot: Bot):
+    cmd_help = BotCommand(
+        command="help",
+        description="Show menu",
+    )
+    cmd_language = BotCommand(
+        command="language",
+        description="Change language",
+    )
+
+    # public = []
+    private = [cmd_help, cmd_language]
+
+    # await bot.set_my_commands(public, BotCommandScopeAllGroupChats())
+    await bot.set_my_commands(private, BotCommandScopeAllPrivateChats())
 
 
 async def main():
@@ -50,19 +69,21 @@ async def main():
 
     main_router.include_router(start_router)
     main_router.include_router(stats_router)
+    main_router.include_router(language_router)
 
     main_router.include_router(create_remind_dialog)
     main_router.include_router(main_menu_dialog)
     main_router.include_router(delete_remind_dialog)
     main_router.include_router(show_reminders_dialog)
+    main_router.include_router(select_language_dialog)
 
     engine = get_engine(config.database)
     pool = get_session_factory(engine)
 
     i18n_middleware = I18nMiddleware(
         l10ns={
-            locale: FluentLocalization(
-                [locale, config.localization.default],
+            locale.code: FluentLocalization(
+                [locale.code, config.localization.default],
                 ["main.ftl"],
                 FluentResourceLoader(str(config.localization.path)),
             )
@@ -93,6 +114,10 @@ async def main():
     )
 
     async def on_startup():
+        command_task = asyncio.create_task(set_bot_commands(bot))
+        background_tasks.add(command_task)
+        command_task.add_done_callback(background_tasks.discard)
+
         producer_task = asyncio.create_task(producer)
         background_tasks.add(producer_task)
         producer_task.add_done_callback(background_tasks.discard)

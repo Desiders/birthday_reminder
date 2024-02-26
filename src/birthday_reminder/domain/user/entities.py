@@ -5,6 +5,7 @@ from uuid import UUID
 @dataclass
 class User:
     id: UUID
+    language_code: str | None
     tg_id: int
 
 

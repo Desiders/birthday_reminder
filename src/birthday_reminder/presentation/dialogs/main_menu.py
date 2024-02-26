@@ -4,7 +4,7 @@ from typing import Literal
 from aiogram.types import ContentType
 from aiogram_dialog import Dialog, DialogManager, Window
 from aiogram_dialog.api.entities import MediaAttachment
-from aiogram_dialog.widgets.kbd import Back, Next, Row, Start
+from aiogram_dialog.widgets.kbd import Back, Next, Start
 from aiogram_dialog.widgets.media import DynamicMedia
 
 from birthday_reminder.config import Config
@@ -33,17 +33,15 @@ main_menu = Dialog(
     Window(
         I18NFormat("main-menu"),
         CREATE_REMIND_BUTTON,
-        Row(
-            Start(
-                text=I18NFormat("main-menu-show-reminders"),
-                id="show_reminders",
-                state=ShowReminders.show,
-            ),
-            Start(
-                text=I18NFormat("main-menu-delete-reminder"),
-                id="delete_remind",
-                state=DeleteRemind.select_remind,
-            ),
+        Start(
+            text=I18NFormat("main-menu-show-reminders"),
+            id="show_reminders",
+            state=ShowReminders.show,
+        ),
+        Start(
+            text=I18NFormat("main-menu-delete-reminder"),
+            id="delete_remind",
+            state=DeleteRemind.select_remind,
         ),
         Next(I18NFormat("main-menu-show-capybara")),
         state=MainMenu.menu,

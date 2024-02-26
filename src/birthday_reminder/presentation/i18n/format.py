@@ -4,9 +4,8 @@ from aiogram_dialog.api.protocols import DialogManager
 from aiogram_dialog.widgets.common import WhenCondition
 from aiogram_dialog.widgets.text import Text
 
+from ..i18n.constants import I18N_FORMAT_KEY
 from ..i18n.typehints import FormatText
-
-I18N_FORMAT_KEY = "format_text"
 
 logger = getLogger(__name__)
 

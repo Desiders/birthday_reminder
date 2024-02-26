@@ -6,6 +6,10 @@ class MainMenu(StatesGroup):
     capybara = State()
 
 
+class SelectLanguage(StatesGroup):
+    select = State()
+
+
 class CreateRemind(StatesGroup):
     select_month = State()
     select_day = State()
