@@ -1,6 +1,6 @@
 import json
 import logging
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from logging import getLogger
 from os import environ
 from pathlib import Path
@@ -38,10 +38,31 @@ class Logging:
 
 
 @dataclass
+class Locale:
+    code: str
+    name: str
+    flag: str
+    label: str | None = field(init=False, default=None)
+
+    def __post_init__(self):
+        self.label = f"{self.flag} {self.name}"
+
+    @staticmethod
+    def from_code(code: str) -> "Locale":
+        match code:
+            case "en":
+                return Locale(code, "English", "🇬🇧")
+            case "ru":
+                return Locale(code, "Русский", "🇷🇺")
+            case _:
+                raise ValueError(f"Unknown locale code: {code}")
+
+
+@dataclass
 class Localization:
     path: Path
-    default: str = "en"
-    locales: frozenset[str] = frozenset({"en", "ru"})
+    default: str
+    locales: list[Locale] = field(default_factory=list)
 
 
 @dataclass
@@ -84,9 +105,12 @@ def load_config_from_env() -> Config:
     localization = Localization(
         path=Path(environ["LOCALIZATION_PATH"].strip()),
         default=environ.get("LOCALIZATION_DEFAULT", "en").strip(),
-        locales=frozenset(
-            environ.get("LOCALIZATION_LOCALES", "en,ru").strip().split(",")
-        ),
+        locales=[
+            Locale.from_code(language_code)
+            for language_code in environ.get("LOCALIZATION_LOCALES", "en,ru")
+            .strip()
+            .split(",")
+        ],
     )
     database = Database(
         host=environ["POSTGRES_HOST"].strip(),
