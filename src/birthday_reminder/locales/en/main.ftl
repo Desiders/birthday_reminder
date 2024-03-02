@@ -109,6 +109,9 @@ birthday-coming-soon =
 birthday-today =
     Today is { $name }'s birthday! 🎉
 
+dialog-error =
+    Something went wrong. Please try using the new dialog.
+
 January = January
 February = February
 March = March

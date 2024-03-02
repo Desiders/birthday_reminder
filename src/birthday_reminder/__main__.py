@@ -29,7 +29,12 @@ from .presentation.dialogs import (
     select_language_dialog,
     show_reminders_dialog,
 )
-from .presentation.handlers import language_router, start_router, stats_router
+from .presentation.handlers import (
+    dialog_exception_handler,
+    language_router,
+    start_router,
+    stats_router,
+)
 from .presentation.middlewares import (
     DatabaseMiddleware,
     I18nMiddleware,
@@ -96,6 +101,8 @@ async def main():
 
     main_router = Router(name="main_router")
 
+    main_router.error.register(dialog_exception_handler)
+
     main_router.include_router(start_router)
     main_router.include_router(stats_router)
     main_router.include_router(language_router)
@@ -123,6 +130,7 @@ async def main():
         default_lang=config.localization.default,
     )
 
+    main_router.error.middleware.register(i18n_middleware)
     main_router.message.middleware.register(i18n_middleware)
     main_router.callback_query.middleware.register(i18n_middleware)
 
