@@ -1,10 +1,13 @@
 import asyncio
+from functools import partial
 from logging import getLogger
+from typing import Any, Coroutine
 
 from aiogram import Bot, Dispatcher, Router
 from aiogram.types import BotCommand, BotCommandScopeAllPrivateChats
 from aiogram_dialog import setup_dialogs
 from fluent.runtime import FluentLocalization, FluentResourceLoader
+from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession
 
 from birthday_reminder.adapters.database import SQLAlchemyUoW
 from birthday_reminder.adapters.database.repositories import (
@@ -37,7 +40,7 @@ from .presentation.scheduler import nearest_birthday_reminders_consumer
 logger = getLogger(__name__)
 
 # Check text in `Important`: https://docs.python.org/3/library/asyncio-task.html#asyncio.create_task
-background_tasks = set()
+background_tasks: set[asyncio.Task] = set()
 
 
 async def set_bot_commands(bot: Bot):
@@ -55,6 +58,32 @@ async def set_bot_commands(bot: Bot):
 
     # await bot.set_my_commands(public, BotCommandScopeAllGroupChats())
     await bot.set_my_commands(private, BotCommandScopeAllPrivateChats())
+
+
+async def on_startup(
+    bot: Bot,
+    producer: Coroutine[Any, Any, None],
+    consumer: Coroutine[Any, Any, None],
+):
+    command_task = asyncio.create_task(set_bot_commands(bot))
+    background_tasks.add(command_task)
+    command_task.add_done_callback(background_tasks.discard)
+
+    producer_task = asyncio.create_task(producer)
+    background_tasks.add(producer_task)
+    producer_task.add_done_callback(background_tasks.discard)
+
+    consumer_task = asyncio.create_task(consumer)
+    background_tasks.add(consumer_task)
+    consumer_task.add_done_callback(background_tasks.discard)
+
+
+async def on_shutdown(session: AsyncSession, engine: AsyncEngine):
+    await session.close()
+    await engine.dispose()
+
+    for task in background_tasks:
+        task.cancel()
 
 
 async def main():
@@ -119,25 +148,8 @@ async def main():
         config.localization.default,
     )
 
-    async def on_startup():
-        command_task = asyncio.create_task(set_bot_commands(bot))
-        background_tasks.add(command_task)
-        command_task.add_done_callback(background_tasks.discard)
-
-        producer_task = asyncio.create_task(producer)
-        background_tasks.add(producer_task)
-        producer_task.add_done_callback(background_tasks.discard)
-
-        consumer_task = asyncio.create_task(consumer)
-        background_tasks.add(consumer_task)
-        consumer_task.add_done_callback(background_tasks.discard)
-
-    async def on_shutdown():
-        await session.close()
-        await engine.dispose()
-
-    main_router.startup.register(on_startup)
-    main_router.shutdown.register(on_shutdown)
+    main_router.startup.register(partial(on_startup, bot, producer, consumer))
+    main_router.shutdown.register(partial(on_shutdown, session, engine))
 
     dispatcher = Dispatcher()
     dispatcher.include_router(main_router)
