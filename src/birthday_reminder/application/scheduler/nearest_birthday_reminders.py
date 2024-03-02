@@ -8,6 +8,7 @@ from birthday_reminder.application.birthday_remind.queries import (
     GetByInterval,
     GetByIntervalRequest,
 )
+from birthday_reminder.application.common.exceptions import RepoError
 from birthday_reminder.domain.birthday_remind.entities import BirthdayRemind
 
 TIMEOUT_BETWEEN_REQUESTS = 60 * 60 * 24.0  # 24 hours in seconds
@@ -68,9 +69,29 @@ async def producer(
             f"Querying for reminders between {start_day}/{start_month} and {end_day}/{end_month}"
         )
 
-        reminders = await query(
-            GetByIntervalRequest(start_day, start_month, end_day, end_month)
-        )
+        try:
+            reminders = await query(
+                GetByIntervalRequest(
+                    start_day, start_month, end_day, end_month
+                )
+            )
+        except RepoError as err:
+            logger.error(
+                "Error while getting reminders by interval", exc_info=err
+            )
+
+            await asyncio.sleep(5)
+
+            continue
+        except Exception as err:
+            logger.critical(
+                "Unknown error while getting reminders by interval",
+                exc_info=err,
+            )
+
+            await asyncio.sleep(5)
+
+            continue
 
         logger.debug(f"Reminders count: {len(reminders)}")
 

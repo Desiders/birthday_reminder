@@ -91,6 +91,16 @@ async def consumer(
         except RepoError as err:
             logger.error("Error while getting user by ID", exc_info=err)
 
+            await asyncio.sleep(5)
+
+            continue
+        except Exception as err:
+            logger.critical(
+                "Unknown error while getting user by ID", exc_info=err
+            )
+
+            await asyncio.sleep(5)
+
             continue
 
         today = date.today()
