@@ -3,7 +3,7 @@ from typing import Any
 
 from aiogram.types import CallbackQuery
 from aiogram_dialog import Dialog, DialogManager, StartMode, Window
-from aiogram_dialog.widgets.kbd import ScrollingGroup, Select
+from aiogram_dialog.widgets.kbd import Group, Select
 from aiogram_dialog.widgets.text import Format
 from fluent.runtime import FluentLocalization
 
@@ -14,7 +14,6 @@ from birthday_reminder.application.user import UserRepo
 from birthday_reminder.application.user.commands import UpdateUser
 from birthday_reminder.config import Config, Locale
 from birthday_reminder.domain.user.entities import User as UserDB
-from birthday_reminder.presentation.dialogs.common import MAIN_MENU_BUTTON
 from birthday_reminder.presentation.i18n import (
     I18N_FORMAT_KEY,
     L10NS_KEY,
@@ -101,7 +100,7 @@ async def on_language_selected(
 select_language = Dialog(
     Window(
         I18NFormat("start"),
-        ScrollingGroup(
+        Group(
             Select(
                 text=Format("{item.label}"),
                 id=LANGUAGE_ID,
@@ -111,9 +110,7 @@ select_language = Dialog(
             ),
             id=GROUP_ID,
             width=2,
-            height=6,
         ),
-        MAIN_MENU_BUTTON,
         state=SelectLanguage.select,
         getter=languages_getter,
     ),
