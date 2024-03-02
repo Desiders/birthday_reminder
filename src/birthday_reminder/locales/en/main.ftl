@@ -103,6 +103,12 @@ back-to-main-menu-button =
 confirm-button =
     Confirm >>
 
+birthday-coming-soon =
+    { $name }'s birthday is coming soon!
+
+birthday-today =
+    Today is { $name }'s birthday! 🎉
+
 January = January
 February = February
 March = March

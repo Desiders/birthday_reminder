@@ -103,6 +103,12 @@ back-to-main-menu-button =
 confirm-button =
     Подтвердить >>
 
+birthday-coming-soon =
+    Скоро день рождения { $name }!
+
+birthday-today =
+    Сегодня день рождения { $name }! 🎉
+
 January = Январь
 February = Февраль
 March = Март

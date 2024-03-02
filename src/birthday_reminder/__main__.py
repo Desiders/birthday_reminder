@@ -80,15 +80,17 @@ async def main():
     engine = get_engine(config.database)
     pool = get_session_factory(engine)
 
+    l10ns = {
+        locale.code: FluentLocalization(
+            [locale.code, config.localization.default],
+            ["main.ftl"],
+            FluentResourceLoader(str(config.localization.path)),
+        )
+        for locale in config.localization.locales
+    }
+
     i18n_middleware = I18nMiddleware(
-        l10ns={
-            locale.code: FluentLocalization(
-                [locale.code, config.localization.default],
-                ["main.ftl"],
-                FluentResourceLoader(str(config.localization.path)),
-            )
-            for locale in config.localization.locales
-        },
+        l10ns=l10ns,
         default_lang=config.localization.default,
     )
 
@@ -110,7 +112,11 @@ async def main():
         queue, GetByInterval(birthday_reader, uow)
     )
     consumer = nearest_birthday_reminders_consumer(
-        queue, GetByID(user_reader, uow), bot
+        queue,
+        GetByID(user_reader, uow),
+        bot,
+        l10ns,
+        config.localization.default,
     )
 
     async def on_startup():

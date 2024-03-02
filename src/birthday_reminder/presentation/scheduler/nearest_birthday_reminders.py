@@ -12,6 +12,7 @@ from aiogram.exceptions import (
     TelegramRetryAfter,
     TelegramServerError,
 )
+from fluent.runtime import FluentLocalization
 
 from birthday_reminder.application.common.exceptions import RepoError
 from birthday_reminder.application.user.queries import GetByID
@@ -71,6 +72,8 @@ async def consumer(
     queue: Queue[BirthdayRemind],
     query: GetByID,
     bot: Bot,
+    l10ns: dict[str, FluentLocalization],
+    default_lang: str,
 ) -> None:
     logger.debug("Starting the consumer")
 
@@ -95,6 +98,19 @@ async def consumer(
         today_day = today.day
         today_month = today.month
 
+        lang = user.language_code
+
+        if not lang:
+            lang = default_lang
+        elif lang not in l10ns:
+            lang = default_lang
+
+            logger.debug(
+                "Language not found, using default", extra={"lang": lang}
+            )
+
+        l10n = l10ns[lang]
+
         if (
             today_day == birthday_remind.day
             and today_month == birthday_remind.month
@@ -104,14 +120,19 @@ async def consumer(
                 extra={"birthday_remind": birthday_remind},
             )
 
-            text = f"Today is {birthday_remind.name}'s birthday! 🎉"
+            text = l10n.format_value(
+                "birthday-today", {"name": birthday_remind.name}
+            )
         else:
             logger.debug(
                 "Birthday is coming soon",
                 extra={"birthday_remind": birthday_remind},
             )
 
-            text = f"Your friend {birthday_remind.name}'s birthday is coming soon! 🎉"
+            text = l10n.format_value(
+                "birthday-coming-soon",
+                {"name": birthday_remind.name},
+            )
 
         await send_message_with_retries(
             bot,
