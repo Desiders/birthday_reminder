@@ -3,6 +3,7 @@ from logging import getLogger
 
 from aiogram import F
 from aiogram_dialog import Dialog, DialogManager, Window
+from babel.dates import format_date
 
 from birthday_reminder.application.birthday_remind import BirthdayRemindReader
 from birthday_reminder.application.birthday_remind.queries import (
@@ -72,7 +73,11 @@ async def reminders_getter(dialog_manager: DialogManager, **_kwargs) -> dict:
                                 "show-reminders-text-not-leap-year",
                                 {
                                     "name": remind.name,
-                                    "date": birth_date.strftime("%d.%m"),
+                                    "date": format_date(
+                                        birth_date,
+                                        format="d MMMM",
+                                        locale=db_user.language_code,
+                                    ),
                                     "days": difference.days,
                                 },
                             ),
@@ -90,7 +95,11 @@ async def reminders_getter(dialog_manager: DialogManager, **_kwargs) -> dict:
                         "show-reminders-text",
                         {
                             "name": remind.name,
-                            "date": birth_date.strftime("%d.%m"),
+                            "date": format_date(
+                                birth_date,
+                                format="d MMMM",
+                                locale=db_user.language_code,
+                            ),
                             "days": difference.days,
                         },
                     ),
@@ -115,7 +124,11 @@ async def reminders_getter(dialog_manager: DialogManager, **_kwargs) -> dict:
                                 "show-reminders-text",
                                 {
                                     "name": remind.name,
-                                    "date": birth_date.strftime("%d.%m"),
+                                    "date": format_date(
+                                        birth_date,
+                                        format="d MMMM",
+                                        locale=db_user.language_code,
+                                    ),
                                     "days": difference.days,
                                 },
                             ),
@@ -137,7 +150,11 @@ async def reminders_getter(dialog_manager: DialogManager, **_kwargs) -> dict:
                         "show-reminders-text-not-leap-year",
                         {
                             "name": remind.name,
-                            "date": birth_date.strftime("%d.%m"),
+                            "date": format_date(
+                                birth_date,
+                                format="d MMMM",
+                                locale=db_user.language_code,
+                            ),
                             "days": difference.days,
                         },
                     ),
