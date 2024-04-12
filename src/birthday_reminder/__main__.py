@@ -12,10 +12,18 @@ from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession
 from birthday_reminder.adapters.database import SQLAlchemyUoW
 from birthday_reminder.adapters.database.repositories import (
     BirthdayRemindReaderImpl,
+    CompletedBirthdayRemindReaderImpl,
+    CompletedBirthdayRemindRepoImpl,
     UserReaderImpl,
 )
 from birthday_reminder.application.birthday_remind.queries import (
     GetByInterval,
+)
+from birthday_reminder.application.completed_birthday_remind.commands import (
+    AddCompletedBirthdayRemind,
+)
+from birthday_reminder.application.completed_birthday_remind.queries import (
+    GetByBirthdayRemindIDAndYear,
 )
 from birthday_reminder.application.user.queries import GetByID
 
@@ -141,16 +149,22 @@ async def main():
     session = pool()
 
     queue = asyncio.Queue()
-    birthday_reader = BirthdayRemindReaderImpl(session)
     user_reader = UserReaderImpl(session)
+    birthday_reader = BirthdayRemindReaderImpl(session)
+    completed_birthday_remind_reader = CompletedBirthdayRemindReaderImpl(
+        session
+    )
+    completed_birthday_remind_repo = CompletedBirthdayRemindRepoImpl(session)
     uow = SQLAlchemyUoW(session)
 
     producer = nearest_birthday_reminders_producer(
-        queue, GetByInterval(birthday_reader, uow)
+        config.reminder, queue, GetByInterval(birthday_reader, uow)
     )
     consumer = nearest_birthday_reminders_consumer(
         queue,
         GetByID(user_reader, uow),
+        GetByBirthdayRemindIDAndYear(completed_birthday_remind_reader, uow),
+        AddCompletedBirthdayRemind(completed_birthday_remind_repo, uow),
         bot,
         l10ns,
         config.localization.default,

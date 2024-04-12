@@ -1,4 +1,7 @@
 from birthday_reminder.domain.birthday_remind.entities import BirthdayRemind
+from birthday_reminder.domain.completed_birthday_remind.entities import (
+    CompletedBirthdayRemind,
+)
 from birthday_reminder.domain.user.entities import User
 
 from . import models
@@ -41,4 +44,26 @@ def birthday_remind_to_model(
         name=birthday_remind.name,
         day=birthday_remind.day,
         month=birthday_remind.month,
+    )
+
+
+def completed_birthday_remind_to_model(
+    completed_birthday_remind: CompletedBirthdayRemind,
+) -> models.CompletedBirthdayRemind:
+    return models.CompletedBirthdayRemind(
+        id=completed_birthday_remind.id,
+        birthday_remind_id=completed_birthday_remind.birthday_remind_id,
+        year=completed_birthday_remind.year,
+        reminder_type=completed_birthday_remind.reminder_type,
+    )
+
+
+def model_to_completed_birthday_remind(
+    completed_birthday_remind: models.CompletedBirthdayRemind,
+) -> CompletedBirthdayRemind:
+    return CompletedBirthdayRemind(
+        id=completed_birthday_remind.id,
+        birthday_remind_id=completed_birthday_remind.birthday_remind_id,
+        year=completed_birthday_remind.year,
+        reminder_type=completed_birthday_remind.reminder_type,
     )

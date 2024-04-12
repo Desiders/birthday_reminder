@@ -11,8 +11,7 @@ from birthday_reminder.config import Database as DatabaseConfig
 def get_engine(config: DatabaseConfig) -> AsyncEngine:
     engine = create_async_engine(
         config.get_postgres_uri(),
-        echo=True,
-        echo_pool=config.echo,
+        echo=config.echo,
         pool_size=config.pool_size,
     )
     return engine
