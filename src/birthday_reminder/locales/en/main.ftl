@@ -104,7 +104,7 @@ confirm-button =
     Confirm >>
 
 birthday-coming-soon =
-    { $name }'s birthday is coming soon!
+    Don't forget that tomorrow is your friend { $name }'s birthday!
 
 birthday-today =
     Today is { $name }'s birthday! 🎉
