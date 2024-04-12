@@ -13,10 +13,24 @@ from aiogram.exceptions import (
     TelegramServerError,
 )
 from fluent.runtime import FluentLocalization
+from uuid6 import uuid7
 
 from birthday_reminder.application.common.exceptions import RepoError
+from birthday_reminder.application.completed_birthday_remind.commands import (
+    AddCompletedBirthdayRemind,
+)
+from birthday_reminder.application.completed_birthday_remind.queries import (
+    GetByBirthdayRemindIDAndYear,
+)
 from birthday_reminder.application.user.queries import GetByID
 from birthday_reminder.domain.birthday_remind.entities import BirthdayRemind
+from birthday_reminder.domain.completed_birthday_remind.entities import (
+    CompletedBirthdayRemind,
+    ReminderType,
+)
+from birthday_reminder.domain.completed_birthday_remind.exceptions import (
+    IDForYearAndTypeNotFound,
+)
 from birthday_reminder.domain.user.exceptions import IDNotFound
 
 logger = getLogger(__name__)
@@ -70,7 +84,9 @@ async def send_message_with_retries(
 
 async def consumer(
     queue: Queue[BirthdayRemind],
-    query: GetByID,
+    get_by_id: GetByID,
+    get_completed_birthday_remind: GetByBirthdayRemindIDAndYear,
+    add_completed_birthday_remind: AddCompletedBirthdayRemind,
     bot: Bot,
     l10ns: dict[str, FluentLocalization],
     default_lang: str,
@@ -78,12 +94,12 @@ async def consumer(
     logger.debug("Starting the consumer")
 
     while True:
-        birthday_remind = await queue.get()
+        remind = await queue.get()
 
-        logger.info(f"Consumed: {birthday_remind}")
+        logger.info(f"Consumed: {remind}")
 
         try:
-            user = await query(birthday_remind.user_id)
+            user = await get_by_id(remind.user_id)
         except IDNotFound as err:
             logger.warn(err)
 
@@ -121,27 +137,43 @@ async def consumer(
 
         l10n = l10ns[lang]
 
-        if (
-            today_day == birthday_remind.day
-            and today_month == birthday_remind.month
-        ):
-            logger.debug(
-                "Today is birthday",
-                extra={"birthday_remind": birthday_remind},
+        type: ReminderType
+        if today_day == remind.day and today_month == remind.month:
+            type = ReminderType.OnTheDay
+        else:
+            type = ReminderType.BeforehandInOneDay
+
+        try:
+            completed_birthday_remind = await get_completed_birthday_remind(
+                remind.id,
+                today.year,
+                type,
             )
 
-            text = l10n.format_value(
-                "birthday-today", {"name": birthday_remind.name}
+            logger.debug(
+                f"Completed birthday remind found: {completed_birthday_remind}. Skipping."
             )
+
+            continue
+        except IDForYearAndTypeNotFound as err:
+            logger.debug(err)
+
+        if type is ReminderType.OnTheDay:
+            logger.debug(
+                "Today is birthday",
+                extra={"birthday_remind": remind},
+            )
+
+            text = l10n.format_value("birthday-today", {"name": remind.name})
         else:
             logger.debug(
                 "Birthday is coming soon",
-                extra={"birthday_remind": birthday_remind},
+                extra={"birthday_remind": remind},
             )
 
             text = l10n.format_value(
                 "birthday-coming-soon",
-                {"name": birthday_remind.name},
+                {"name": remind.name},
             )
 
         await send_message_with_retries(
@@ -149,6 +181,10 @@ async def consumer(
             user.tg_id,
             text,
             parse_mode=None,
+        )
+
+        await add_completed_birthday_remind(
+            CompletedBirthdayRemind(uuid7(), remind.id, today.year, type)
         )
 
         queue.task_done()
