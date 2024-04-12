@@ -1,15 +1,18 @@
 import json
 import logging
 from dataclasses import dataclass, field
+from datetime import datetime
 from logging import getLogger
 from os import environ
 from pathlib import Path
 from typing import Any, Callable, MutableMapping
 
+import pytz
 import structlog
 
 __all__ = [
     "Bot",
+    "Reminder",
     "Logging",
     "Database",
     "Config",
@@ -23,6 +26,27 @@ logger = getLogger(__name__)
 @dataclass
 class Bot:
     token: str
+
+
+@dataclass
+class Reminder:
+    hour: int
+    tz_raw: str
+    tz: pytz.BaseTzInfo = field(init=False)
+
+    def __post_init__(self):
+        if not 0 <= self.hour <= 23:
+            raise ValueError("Hour must be between 0 and 23")
+
+        try:
+            self.tz = pytz.timezone(self.tz_raw)
+        except pytz.UnknownTimeZoneError:
+            raise ValueError(f"Unknown timezone: {self.tz_raw}")
+
+    def get_datetime(self) -> datetime:
+        return datetime.now(tz=self.tz).replace(
+            hour=self.hour, minute=0, second=0, microsecond=0
+        )
 
 
 @dataclass
@@ -73,7 +97,7 @@ class Database:
     password: str
     database: str
 
-    echo: bool = True
+    echo: bool = False
     pool_size: int = 10
 
     def get_postgres_uri(self) -> str:
@@ -83,6 +107,7 @@ class Database:
 @dataclass
 class Config:
     bot: Bot
+    reminder: Reminder
     media: Media
     logging: Logging
     localization: Localization
@@ -93,6 +118,9 @@ def load_config_from_env() -> Config:
     raw_path = environ.get("LOGGING_PATH")
 
     bot = Bot(token=environ["BOT_TOKEN"])
+    reminder = Reminder(
+        hour=int(environ["REMINDER_HOUR"]), tz_raw=environ["REMINDER_TZ"]
+    )
     media = Media(capybara_path=Path(environ["MEDIA_CAPYBARA_PATH"]))
     logging = Logging(
         level=environ.get("LOGGING_LEVEL", "INFO").strip(),
@@ -122,6 +150,7 @@ def load_config_from_env() -> Config:
 
     return Config(
         bot=bot,
+        reminder=reminder,
         media=media,
         logging=logging,
         localization=localization,
