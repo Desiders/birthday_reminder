@@ -3,11 +3,10 @@ from logging import getLogger
 from logging.config import fileConfig
 
 from alembic import context
-from sqlalchemy import create_engine, pool
-from sqlalchemy.ext.asyncio import AsyncEngine
-
 from birthday_reminder.adapters.database.models import BaseModel
 from birthday_reminder.config import load_config_from_env
+from sqlalchemy import create_engine, pool
+from sqlalchemy.ext.asyncio import AsyncEngine
 
 logger = getLogger()
 
