@@ -22,7 +22,12 @@ class CompletedBirthdayRemind(TimedBaseModel):
         server_default=sa.func.uuid_generate_v7(),
     )
     birthday_remind_id: Mapped[UUID] = mapped_column(
-        sa.ForeignKey("birthday_reminds.id"), nullable=False
+        sa.ForeignKey(
+            "birthday_reminds.id",
+            onupdate="CASCADE",
+            ondelete="CASCADE",
+        ),
+        nullable=False,
     )
     year: Mapped[int] = mapped_column(nullable=False)
     reminder_type: Mapped[ReminderType] = mapped_column(nullable=False)

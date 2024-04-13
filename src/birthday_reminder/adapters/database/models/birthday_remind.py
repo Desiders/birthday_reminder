@@ -17,7 +17,12 @@ class BirthdayRemind(TimedBaseModel):
         server_default=sa.func.uuid_generate_v7(),
     )
     user_id: Mapped[UUID] = mapped_column(
-        sa.ForeignKey("users.id"), nullable=False
+        sa.ForeignKey(
+            "users.id",
+            onupdate="CASCADE",
+            ondelete="CASCADE",
+        ),
+        nullable=False,
     )
     name: Mapped[str] = mapped_column(nullable=False)
     day: Mapped[int] = mapped_column(nullable=False)
