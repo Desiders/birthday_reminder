@@ -38,49 +38,45 @@ async def producer(
         # If the current hour is less than the hour set in the config, sleep until that hour.
         if now.hour < config.hour:
             config_datetime = config.get_datetime()
-            remaining_seconds = int(
-                config_datetime.timestamp() - now.timestamp()
-            )
+            remaining = config_datetime - now
 
             logger.debug(
-                f"Sleeping until {config_datetime.strftime('%H:%M:%S')}. Remaining seconds: {remaining_seconds}. Waiting for the configured hour."
+                f"Sleeping until {config_datetime.strftime('%H:%M:%S')}. Remaining: {remaining}. Waiting for the configured hour."
             )
 
-            await asyncio.sleep(remaining_seconds)
-
-        today = now.today()
+            await asyncio.sleep(remaining.total_seconds())
 
         # If today is 27 February, tomorrow is 28 February if it's a leap year, otherwise it's 1 March.
         # This need to be handled for cases when the current year isn't a leap year,
         # but we need to remind the user about the birthday of a person who was born on 29 February.
         # If the current year is a leap year, we don't need to handle this case because 29 February is a valid date.
-        if today.month == 2 and today.day == 27:
-            if isleap(today.year):
-                tomorrow = today.replace(month=2, day=28, tzinfo=config.tz)
+        if now.month == 2 and now.day == 27:
+            if isleap(now.year):
+                tomorrow = now.replace(month=2, day=28, tzinfo=config.tz)
             else:
-                tomorrow = today.replace(month=3, day=1, tzinfo=config.tz)
+                tomorrow = now.replace(month=3, day=1, tzinfo=config.tz)
         # If today is 28 February, tomorrow is 29 February if it's a leap year, otherwise it's 1 March.
-        elif today.month == 2 and today.day == 28:
-            if isleap(today.year):
-                tomorrow = today.replace(month=2, day=29, tzinfo=config.tz)
+        elif now.month == 2 and now.day == 28:
+            if isleap(now.year):
+                tomorrow = now.replace(month=2, day=29, tzinfo=config.tz)
             else:
-                tomorrow = today.replace(month=3, day=1, tzinfo=config.tz)
+                tomorrow = now.replace(month=3, day=1, tzinfo=config.tz)
         # If today is 31 December, tomorrow is 1 January of the next year.
-        elif today.month == 12 and today.day == 31:
-            tomorrow = today.replace(
-                year=today.year + 1, month=1, day=1, tzinfo=config.tz
+        elif now.month == 12 and now.day == 31:
+            tomorrow = now.replace(
+                year=now.year + 1, month=1, day=1, tzinfo=config.tz
             )
         # For all other cases, tomorrow is the next day or the next month if the next day is the first day of the next month.
         else:
             try:
-                tomorrow = today.replace(day=today.day + 1, tzinfo=config.tz)
+                tomorrow = now.replace(day=now.day + 1, tzinfo=config.tz)
             except ValueError:
-                tomorrow = today.replace(
-                    month=today.month + 1, day=1, tzinfo=config.tz
+                tomorrow = now.replace(
+                    month=now.month + 1, day=1, tzinfo=config.tz
                 )
 
-        start_day = today.day
-        start_month = today.month
+        start_day = now.day
+        start_month = now.month
         end_day = tomorrow.day
         end_month = tomorrow.month
 
@@ -120,21 +116,19 @@ async def producer(
             await queue.put(reminder)
 
         # Replace the current day with the next day and sleep until the hour set in the config
-        next_day_with_config_hour = today.replace(
+        next_day_with_config_hour = now.replace(
             hour=config.hour,
             minute=0,
             second=0,
             microsecond=0,
-            tzinfo=config.tz,
+            fold=0,
         ) + timedelta(days=1)
 
-        remaining_seconds = int(
-            next_day_with_config_hour.timestamp()
-            - datetime.now(tz=config.tz).timestamp()
-        )
+        remaining = next_day_with_config_hour - now
 
         logger.debug(
-            f"Sleeping until {next_day_with_config_hour.strftime('%H:%M:%S')}. Remaining seconds: {remaining_seconds}. Waiting for the next day."
+            f"Sleeping until {next_day_with_config_hour.strftime('%H:%M:%S')}. "
+            f"Remaining: {remaining}. Waiting for the next day."
         )
 
-        await asyncio.sleep(remaining_seconds)
+        await asyncio.sleep(remaining.total_seconds())
